@@ -1,46 +1,36 @@
-# Getting Started with Create React App
+# 認証サービス
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## URL
+* /auth/login    - ログインページを表示する。ログインに成功した場合、"/"にリダイレクトする
+* /auth/logout   - 認証情報をクリアし、ログインページにリダイレクトする
+* /auth/start    - 認証処理を行うAPI
+* /auth/auth     - nginx auth_requestモジュールのためのAPI。レスポンスコード202 authorizedまたは、401 unauthorizedを返す。
 
-## Available Scripts
+## 参考
+https://github.com/oauth2-proxy/oauth2-proxy
+https://qiita.com/convto/items/2822d029349cb1b4df93
+https://qiita.com/OmeletteCurry19/items/f24ee02a942d8f6931a5
 
-In the project directory, you can run:
+-------------------------------------------------------------
+## デバッグ実行
+vscode上での実行を前提。chromeを利用
+フロントデバッグサーバ：ポート80
+バックエンドサーバ：ポート3000
 
-### `npm start`
+### 実行手順
+1. 実行とデバッグで「go API Server」を選択、実行
+2. 実行とデバッグで「debug react」を選択、実行
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+-------------------------------------------------------------
+## nitialize setting
+> npm i -g yarn create-react-app
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## create new react project
+> create-react-app --template typescript
+> yarn add @mui/material @emotion/styled @emotion/react @mui/icons-material axios
 
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+## create new go project
+> mkdir srv
+> cd srv
+> go mod init github.com/multios12/auth-service
+> go get github.com/golang-jwt/jwt/v4

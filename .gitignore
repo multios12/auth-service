@@ -10,6 +10,11 @@
 
 # production
 /build
+/dist
+/srv/static/static
+/srv/static/favicon.ico
+/srv/static/index.html
+/srv/static/asset-manifest.json
 
 # misc
 .DS_Store
