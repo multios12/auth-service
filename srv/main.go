@@ -22,9 +22,9 @@ type authSettings struct {
 }
 
 //go:embed static/*
-var static embed.FS
-var settingsFile *string
-var settings authSettings
+var static embed.FS       // 静的リソース
+var settingsFile *string  // 設定ファイルパス
+var settings authSettings //設定
 
 func main() {
 	port := flag.String("port", ":3000", "server port")
@@ -50,7 +50,6 @@ func readAuthSettings(filename string) error {
 	if e == nil {
 		e = json.Unmarshal(f, &settings)
 	}
-
 	return e
 }
 

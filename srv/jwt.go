@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -17,55 +18,55 @@ func createToken(userId string) (string, error) {
 	return token.SignedString([]byte(settings.Secretkey))
 }
 
-func parseToken(tokenString string) error {
+func parseToken(tokenString string) (user, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return settings.Secretkey, nil
+		return []byte(settings.Secretkey), nil
 	})
 
-	if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		// fmt.Println(claims["id"], claims["nbf"])
-		return nil
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		for _, u := range settings.Users {
+			if u.Id == claims["id"] {
+				return u, nil
+			}
+		}
+
+		return user{}, fmt.Errorf("id notfound")
 	} else {
-		return err
+		return user{}, err
 	}
 }
 
-func checkStartBody(r io.ReadCloser) (user, string, error) {
+func checkStartBody(r io.Reader) (user, string, error) {
 	body, e := ioutil.ReadAll(r)
-	if e != nil {
-		return user{}, "Unauthorized", e
-	}
-	b := user{}
-	e = json.Unmarshal(body, &b)
-	if e != nil {
-		return user{}, "Unauthorized", e
+	var b user = user{}
+	if e == nil {
+		e = json.Unmarshal(body, &b)
 	}
 
-	if len(b.Id) == 0 || len(b.Password) == 0 {
-		var m string = ""
-		if len(b.Id) == 0 {
-			m += `"idMessage":"input required."`
-		}
-		if len(b.Password) == 0 {
-			if len(m) > 0 {
-				m += ","
-			}
-			m += `"pwMessage":"input required."`
-		}
-		m = `{` + m + `}`
-		return user{}, m, errors.New("Unauthorized")
+	var m []string
+	if len(b.Id) == 0 {
+		m = append(m, `"idMessage":"input required."`)
+	}
+	if len(b.Password) == 0 {
+		m = append(m, `"pwMessage":"input required."`)
+	}
+	if len(m) > 0 {
+		message := fmt.Sprintf("{%s}", strings.Join(m, ","))
+		return user{}, message, errors.New("unauthorized")
 	}
 
 	for _, u := range settings.Users {
 		if b.Id == u.Id && b.Password == u.Password {
-			return u, "Unauthorized", nil
+			return u, "authorized", nil
 		}
 	}
 
-	return user{}, "Unauthorized", errors.New("Unauthorized")
+	if e == nil {
+		e = errors.New("unauthorized")
+	}
+	return user{}, "unauthorized", e
 }

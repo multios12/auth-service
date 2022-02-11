@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -12,6 +14,7 @@ func routerInit(port string) {
 	http.HandleFunc("/auth/logout", authLogout)
 	http.HandleFunc("/auth/auth", authAuth)
 	http.HandleFunc("/auth/start", authStart)
+	http.HandleFunc("/auth/info", authInfo)
 
 	err := http.ListenAndServe(port, nil)
 	if err != nil {
@@ -26,7 +29,7 @@ func authLogin(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/auth/login/" {
 		url = "static/index.html"
 	} else {
-		url = `static/` + r.URL.Path[len("/auth/login/"):]
+		url = fmt.Sprintf(`static/%s`, r.URL.Path[len("/auth/login/"):])
 	}
 	b, err := static.ReadFile(url)
 	if err != nil {
@@ -55,7 +58,7 @@ func authLogout(w http.ResponseWriter, r *http.Request) {
 func authAuth(w http.ResponseWriter, r *http.Request) {
 	cookie, e := r.Cookie("_auth-proxy")
 	if e != nil {
-		e = parseToken(cookie.Value)
+		_, e = parseToken(cookie.Value)
 	}
 
 	if e != nil {
@@ -101,4 +104,26 @@ func authStart(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 	w.WriteHeader(200)
+}
+
+func authInfo(w http.ResponseWriter, r *http.Request) {
+	cookie, e := r.Cookie("_auth-proxy")
+	var u user
+	var body []byte
+	if e == nil {
+		u, e = parseToken(cookie.Value)
+	}
+
+	if e == nil {
+		body, e = json.Marshal(u)
+	}
+
+	if e != nil {
+		w.WriteHeader(401)
+		w.Write([]byte("401 Unauthorized"))
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(body)
 }
