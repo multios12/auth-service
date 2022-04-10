@@ -4,6 +4,7 @@
 /node_modules
 /.pnp
 .pnp.js
+/srv/__debug_bin.exe
 
 # testing
 /coverage

@@ -1,13 +1,16 @@
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { HashRouter as Router, Route, Routes } from 'react-router-dom';
 import './App.css';
 import Login from './views/Login';
+import Setting from './views/Setting'
 
 export default function App() {
-  const theme = createTheme({ palette: { mode: 'dark' } })
 
   return (
-    <ThemeProvider theme={theme}>
-      <Login />
-    </ThemeProvider>
+    <Router>
+      <Routes>
+        <Route path='/' element={<Login />} />
+        <Route path='/setting' element={<Setting />} />
+      </Routes>
+    </Router>
   );
 }

@@ -1,6 +1,8 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestReadAuthSettings(t *testing.T) {
 	e := readAuthSettings("../testdata/setting.json")

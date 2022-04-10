@@ -1,5 +1,4 @@
-import { Button, Card, CardContent, CardHeader, TextField } from '@mui/material';
-import { Box } from '@mui/system';
+import 'bulma/css/bulma.css';
 import axios from 'axios';
 import { useState } from 'react';
 
@@ -28,16 +27,46 @@ export default function Login() {
     })
   }
 
-  return <Box m={3}>
-    <Card color="primary">
-      <CardHeader title="login" />
-      <CardContent>
-        <TextField name="id" label="id" fullWidth error={isErr} helperText={dat.idMessage}
-          value={dat.Id} onChange={e => setDat({ ...dat, Id: e.target.value })} />
-        <TextField name="password" label="password" fullWidth error={isErr} helperText={dat.pwMessage}
-          value={dat.Password} onChange={e => setDat({ ...dat, Password: e.target.value })} />
-        <Button variant="outlined" color="primary" onClick={clickSubmit}>submit</Button>
-      </CardContent>
-    </Card>
-  </Box>;
+  return (
+    <div className='card p-5 is-dark'>
+      <header className="card-header">
+        <p className="card-header-title">
+          login
+        </p>
+      </header>
+      <div className="card-content">
+        <div className='content p-5'>
+          <div className='field is-horizontal'>
+            <div className="field-label is-normal"><label className="label">ID</label></div>
+            <div className="field-body">
+              <div className="field">
+                <p className="control">
+                  <input type="text" className="input is-primary" placeholder={dat.idMessage}
+                    value={dat.Id} onChange={e => setDat({ ...dat, Id: e.target.value })} />
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className='field is-horizontal'>
+            <div className="field-label is-normal"><label className="label">PASSWORD</label></div>
+            <div className="field-body">
+              <div className="field">
+                <p className="control">
+                  <input type="password" className="input is-primary is-fullwidth p-2" placeholder={dat.pwMessage}
+                    value={dat.Password} onChange={e => setDat({ ...dat, Password: e.target.value })} />
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className='card-footer'>
+        <div className='field'>
+          <div className='control'>
+            <button type="button" className='button is-primary' onClick={clickSubmit}>submit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

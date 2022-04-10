@@ -1,10 +1,12 @@
 # 認証サービス
 
 ## URL
-* /auth/login    - ログインページを表示する。ログインに成功した場合、"/"にリダイレクトする
-* /auth/logout   - 認証情報をクリアし、ログインページにリダイレクトする
-* /auth/start    - 認証処理を行うAPI
-* /auth/auth     - nginx auth_requestモジュールのためのAPI。レスポンスコード202 authorizedまたは、401 unauthorizedを返す。
+* /auth/login  - GET  - ログインページを表示する。ログインに成功した場合、"/"にリダイレクトする
+* /auth/logout - GET  - 認証情報をクリアし、ログインページにリダイレクトする
+* /auth/start  - POST - 認証処理を行うAPI
+* /auth/auth   - GET  - nginx auth_requestモジュールのためのAPI。レスポンスコード202 authorizedまたは、401 unauthorizedを返す。
+* /auth/info   - GET  - ユーザ情報を設定返すAPI
+* /auth/info   - POST - ユーザ情報を設定するAPI
 
 ## 参考
 https://github.com/oauth2-proxy/oauth2-proxy
@@ -27,10 +29,4 @@ vscode上での実行を前提。chromeを利用
 
 ## create new react project
 > create-react-app --template typescript
-> yarn add @mui/material @emotion/styled @emotion/react @mui/icons-material axios
-
-## create new go project
-> mkdir srv
-> cd srv
-> go mod init github.com/multios12/auth-service
-> go get github.com/golang-jwt/jwt/v4
+> yarn add bulma axios

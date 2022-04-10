@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"strings"
 	"time"
 
@@ -18,7 +18,17 @@ func createToken(userId string) (string, error) {
 	return token.SignedString([]byte(settings.Secretkey))
 }
 
-func parseToken(tokenString string) (user, error) {
+func parseTokenFromCookie(r *http.Request) (userType, error) {
+	if cookie, e := r.Cookie("_auth-proxy"); e != nil {
+		return userType{}, e
+	} else if u, e := parseToken(cookie.Value); e != nil {
+		return userType{}, e
+	} else {
+		return u, e
+	}
+}
+
+func parseToken(tokenString string) (userType, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -34,39 +44,31 @@ func parseToken(tokenString string) (user, error) {
 			}
 		}
 
-		return user{}, fmt.Errorf("id notfound")
+		return userType{}, fmt.Errorf("id notfound")
 	} else {
-		return user{}, err
+		return userType{}, err
 	}
 }
 
-func checkStartBody(r io.Reader) (user, string, error) {
+func createUser(r io.Reader) (u userType, e error) {
 	body, e := ioutil.ReadAll(r)
-	var b user = user{}
 	if e == nil {
-		e = json.Unmarshal(body, &b)
+		e = json.Unmarshal(body, &u)
 	}
+	return u, e
+}
 
+func (u userType) Check() string {
 	var m []string
-	if len(b.Id) == 0 {
+	if len(u.Id) == 0 {
 		m = append(m, `"idMessage":"input required."`)
 	}
-	if len(b.Password) == 0 {
+	if len(u.Password) == 0 {
 		m = append(m, `"pwMessage":"input required."`)
 	}
+
 	if len(m) > 0 {
-		message := fmt.Sprintf("{%s}", strings.Join(m, ","))
-		return user{}, message, errors.New("unauthorized")
+		return fmt.Sprintf("{%s}", strings.Join(m, ","))
 	}
-
-	for _, u := range settings.Users {
-		if b.Id == u.Id && b.Password == u.Password {
-			return u, "authorized", nil
-		}
-	}
-
-	if e == nil {
-		e = errors.New("unauthorized")
-	}
-	return user{}, "unauthorized", e
+	return ""
 }
