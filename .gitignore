@@ -1,10 +1,7 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
-/node_modules
-/.pnp
-.pnp.js
-/srv/__debug_bin.exe
+/front/build/
+/front/node_modules
+/server/__debug_bin.exe
 
 # testing
 /coverage
@@ -12,10 +9,10 @@
 # production
 /build
 /dist
-/srv/static/static
-/srv/static/favicon.ico
-/srv/static/index.html
-/srv/static/asset-manifest.json
+/server/static/static
+/server/static/favicon.ico
+/server/static/index.html
+/server/static/asset-manifest.json
 
 # misc
 .DS_Store
