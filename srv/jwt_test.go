@@ -109,14 +109,14 @@ func TestCreateUser(t *testing.T) {
 
 func TestCheckStartBody(t *testing.T) {
 	m := userType{Id: "test", Password: "test"}.Check()
-	if m != "" {
+	if m != nil {
 		t.Errorf("error:%s", m)
 	}
 }
 
 func TestCheckStartBody_notfound(t *testing.T) {
 	user := userType{Id: "", Password: ""}.Check()
-	if user == "" {
+	if user == nil {
 		t.Errorf("error")
 	}
 }

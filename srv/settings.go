@@ -26,6 +26,10 @@ func readAuthSettings(filename string) error {
 	f, e := ioutil.ReadFile(filename)
 	if e == nil {
 		e = json.Unmarshal(f, &settings)
+		if e == nil && len(settings.Secretkey) == 0 {
+			settings.Secretkey = createRandomString(20)
+			return writeAuthSettings(filename)
+		}
 	}
 	return e
 }

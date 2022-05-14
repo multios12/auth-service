@@ -155,10 +155,11 @@ func TestAuthSetting(t *testing.T) {
 func TestWriteResponse(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	writeResponse(w, 202) //accepted
-	writeResponse(w, 400) //bad request
-	writeResponse(w, 401) //unauthorized
-	writeResponse(w, 404) //notfound
+	r := httptest.NewRequest("get", "/aaa/", nil)
+	writeResponse(w, r, 202) //accepted
+	writeResponse(w, r, 400) //bad request
+	writeResponse(w, r, 401) //unauthorized
+	writeResponse(w, r, 404) //notfound
 }
 
 func createRequestResponse(method string, target string, body io.Reader) (*httptest.ResponseRecorder, *http.Request) {

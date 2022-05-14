@@ -1,5 +1,4 @@
 import { HashRouter as Router, Route, Routes } from 'react-router-dom';
-import './App.css';
 import Login from './views/Login';
 import Setting from './views/Setting'
 

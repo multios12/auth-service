@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -44,7 +43,7 @@ func parseToken(tokenString string) (userType, error) {
 			}
 		}
 
-		return userType{}, fmt.Errorf("id notfound")
+		return userType{}, fmt.Errorf("ID notfound")
 	} else {
 		return userType{}, err
 	}
@@ -58,17 +57,22 @@ func createUser(r io.Reader) (u userType, e error) {
 	return u, e
 }
 
-func (u userType) Check() string {
-	var m []string
+func (u userType) Check() error {
 	if len(u.Id) == 0 {
-		m = append(m, `"idMessage":"input required."`)
-	}
-	if len(u.Password) == 0 {
-		m = append(m, `"pwMessage":"input required."`)
+		return fmt.Errorf(`ID input required.`)
+	} else if len(u.Password) == 0 {
+		return fmt.Errorf(`PASSWORD input required.`)
 	}
 
-	if len(m) > 0 {
-		return fmt.Sprintf("{%s}", strings.Join(m, ","))
+	return nil
+}
+
+func (u userType) CheckUser() error {
+	for _, t := range settings.Users {
+		if t.Id == u.Id && t.Password == u.Password {
+			return nil
+		}
 	}
-	return ""
+
+	return fmt.Errorf("ID / PASSWORD do not match.")
 }

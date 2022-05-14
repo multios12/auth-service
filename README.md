@@ -5,7 +5,7 @@
 * /auth/logout - GET  - 認証情報をクリアし、ログインページにリダイレクトする
 * /auth/start  - POST - 認証処理を行うAPI
 * /auth/auth   - GET  - nginx auth_requestモジュールのためのAPI。レスポンスコード202 authorizedまたは、401 unauthorizedを返す。
-* /auth/info   - GET  - ユーザ情報を設定返すAPI
+* /auth/info   - GET  - ユーザ情報を返すAPI
 * /auth/info   - POST - ユーザ情報を設定するAPI
 
 ## 参考

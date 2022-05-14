@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"fmt"
 	"net/http"
 )
 
@@ -29,9 +30,12 @@ func main() {
 	settingsFile = flag.String("filename", "./setting.json", "setting file name")
 	flag.Parse()
 
+	fmt.Println("Start: auth-service")
+
 	if e := readAuthSettings(*settingsFile); e != nil {
 		panic(e)
 	}
+	fmt.Printf("Load: setting file[%s]\n", *settingsFile)
 
 	routerInit()
 	if e := http.ListenAndServe(*port, nil); e != nil {
