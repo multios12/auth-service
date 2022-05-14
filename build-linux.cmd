@@ -10,5 +10,5 @@ mkdir dist
 cd srv
 set GOOS=linux
 set GOARCH=amd64
-go build -o ../dist 
+go build -ldflags="-s -w" -trimpath -o ../dist 
 cd ..
