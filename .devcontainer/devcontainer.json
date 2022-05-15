@@ -1,0 +1,17 @@
+{
+    "name": "Dev Container app",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspace/",
+    "shutdownAction": "none",
+    "extensions": [
+        "golang.go",
+        "reliutg.bulma-css-class-completion",
+        "dbaeumer.vscode-eslint"
+    ],
+    "settings": {
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": true // ファイル保存時にESLintでフォーマット
+        }
+    }
+}

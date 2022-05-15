@@ -14,17 +14,19 @@ https://qiita.com/convto/items/2822d029349cb1b4df93
 https://qiita.com/OmeletteCurry19/items/f24ee02a942d8f6931a5
 
 -------------------------------------------------------------
-## デバッグ実行
-vscode上での実行を前提。chromeを利用
-フロントデバッグサーバ：ポート80
-バックエンドサーバ：ポート3000
+## 開発環境の立ち上げ方法
+
+必須ソフトウェア：VS Code, Docker Desktop
+VS Codeに[Remote - Containers]Extensionのインストールが必要
+Vscode上でCTRL+SHIFT+P押下、[Reopen in Container]選択で開発環境の立ち上げが可能
 
 ### 実行手順
 1. 実行とデバッグで「go API Server」を選択、実行
 2. 実行とデバッグで「debug react」を選択、実行
+   ※react上で、react開発サーバが立ち上がっているため、通常2は不要
 
 -------------------------------------------------------------
-## nitialize setting
+## initialize setting
 > npm i -g yarn create-react-app
 
 ## create new react project
