@@ -17,9 +17,9 @@ export default function Login() {
     document.querySelector(".notification")?.classList.add("is-hidden")
     axios.post("/auth/start", dat).then(r => window.location.href = "/").catch(r => {
       document.querySelector(".notification")?.classList.remove("is-hidden")
-      if(r.response.status == 401) {
+      if (r.response.status === 401) {
         setMessage("ID / PASSWORD do not match.")
-      } else if(r.response.status == 400) {
+      } else if (r.response.status === 400) {
         setMessage("ID / PASSWORD input required.")
       } else {
         setMessage("login failed.")
@@ -63,7 +63,7 @@ export default function Login() {
                 <div className="field-body">
                   <div className="field">
                     <p className="control">
-                      <input type="password" className="input is-primary is-fullwidth p-2" 
+                      <input type="password" className="input is-primary is-fullwidth p-2"
                         value={dat.Password} onChange={e => setDat({ ...dat, Password: e.target.value })} />
                     </p>
                   </div>

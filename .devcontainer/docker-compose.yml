@@ -1,0 +1,22 @@
+# DevContainers
+volumes:
+  auth_service-node_modules:
+services:
+  app:
+    build:
+      context: ../
+      dockerfile: ./.devcontainer/Dockerfile
+    tty: true
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - ../:/workspace
+      - auth_service-node_modules:/workspace/front/node_modules
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx-test-root:/usr/share/nginx/html

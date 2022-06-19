@@ -1,8 +1,8 @@
 {
-    "name": "Dev Container app",
-    "dockerComposeFile": "../docker-compose.yml",
+    "name": "auth-service",
+    "dockerComposeFile": "docker-compose.yml",
+    "workspaceFolder": "/workspace",
     "service": "app",
-    "workspaceFolder": "/workspace/",
     "shutdownAction": "none",
     "extensions": [
         "golang.go",

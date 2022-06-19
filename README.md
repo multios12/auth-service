@@ -17,7 +17,7 @@ https://qiita.com/OmeletteCurry19/items/f24ee02a942d8f6931a5
 ## 開発環境の立ち上げ方法
 
 必須ソフトウェア：VS Code, Docker Desktop
-VS Codeに[Remote - Containers]Extensionのインストールが必要
+  ※VS Codeに[Remote - Containers] [Remote Development]Extensionをインストール
 Vscode上でCTRL+SHIFT+P押下、[Reopen in Container]選択で開発環境の立ち上げが可能
 
 ### 実行手順
