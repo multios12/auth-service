@@ -26,9 +26,6 @@ Vscode上でCTRL+SHIFT+P押下、[Reopen in Container]選択で開発環境の�
    ※react上で、react開発サーバが立ち上がっているため、通常2は不要
 
 -------------------------------------------------------------
-## initialize setting
-> npm i -g yarn create-react-app
-
 ## create new react project
 > create-react-app --template typescript
-> yarn add bulma axios
+> yarn add bulma

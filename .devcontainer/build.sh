@@ -3,8 +3,8 @@
 cd front
 yarn build
 cd ..
-cp ./front/build/* ./server/static/ -R
-find ./front/build -delete
+cp ./front/dist/* ./server/static/ -R
+find ./front/dist -delete
 
 cd server
 GOOS=linux
