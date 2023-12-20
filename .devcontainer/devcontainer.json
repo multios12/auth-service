@@ -1,18 +1,22 @@
 {
-    "name": "auth-service",
-    "dockerComposeFile": "docker-compose.yml",
-    "workspaceFolder": "/workspace",
-    "service": "app",
-    "shutdownAction": "none",
-    "extensions": [
+  "name": "auth-service",
+  "dockerComposeFile": "docker-compose.yml",
+  "workspaceFolder": "/workspace",
+  "service": "app",
+  "shutdownAction": "none",
+  "customizations": {
+    "vscode": {
+      "extensions": [
         "golang.go",
         "reliutg.bulma-css-class-completion",
         "dbaeumer.vscode-eslint",
         "svelte.svelte-vscode"
-    ],
-    "settings": {
+      ],
+      "settings": {
         "editor.codeActionsOnSave": {
-            "source.fixAll.eslint": true // ファイル保存時にESLintでフォーマット
+          "source.fixAll.eslint": true // ファイル保存時にESLintでフォーマット
         }
+      }
     }
+  },
 }
