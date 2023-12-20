@@ -29,3 +29,7 @@ Vscode上でCTRL+SHIFT+P押下、[Reopen in Container]選択で開発環境の�
 ## create new react project
 > create-react-app --template typescript
 > yarn add bulma
+
+### goreleaser
+設定ファイルのチェック
+> goreleaser check
