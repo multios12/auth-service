@@ -1,4 +1,5 @@
 <script lang="ts">
+  import "bulma/css/bulma.css";
   type loginType = {
     Id?: string;
     Password?: string;
@@ -105,7 +106,3 @@
     </div>
   </div>
 </main>
-
-<style>
-  @import "bulma/css/bulma.css";
-</style>

@@ -3,8 +3,11 @@
   "compilerOptions": {
     "target": "esnext",
     "useDefineForClassFields": true,
-    "module": "esnext",
-    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+    "module": "ESNext",
+    "moduleResolution": "Classic",
+    "importsNotUsedAsValues": "remove",
+    "resolvePackageJsonImports": false,
     "baseUrl": ".",
     /**
      * Typecheck JS in `.svelte` and `.js` files by default.
@@ -16,6 +19,19 @@
     "checkJs": true,
     "isolatedModules": true
   },
-  "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": [
+    "*/**/*.d.ts",
+    "*.ts",
+    "*/**/*.ts",
+    "*/**/*.js",
+    "*/**/*.svelte"
+  ],
+  "exclude": [
+    "*/dist/*.*",
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
 }
