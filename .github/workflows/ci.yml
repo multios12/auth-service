@@ -32,7 +32,10 @@ jobs:
         env:
           HTML: index.html
 
-      # release
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.x"
+        # release
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
