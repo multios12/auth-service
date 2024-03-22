@@ -10,4 +10,4 @@ RUN apk  --no-cache --update add go git tzdata && \
     apk add --allow-untrusted --no-network --repositories-file=repo.list /tmp/goreleaser_1.22.1_x86_64.apk
 
 WORKDIR /workspace
-# ENTRYPOINT [ "yarn", "start" ]
+#ENTRYPOINT [ "yarn", "dev", "--host", "--cwd", "/workspace/front" ]

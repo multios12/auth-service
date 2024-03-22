@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/multios12/auth-service/setting"
 )
 
 func TestCreateToken(t *testing.T) {
-	settings.Secretkey = "0000000000"
+	setting.Settings.Secretkey = "0000000000"
 	_, err := createToken("test")
 	if err != nil {
 		t.Error(err)
@@ -16,8 +18,8 @@ func TestCreateToken(t *testing.T) {
 }
 
 func TestParseTokenFromCookie(t *testing.T) {
-	settings.Secretkey = "0000000000"
-	settings.Users = []userType{{Id: "test"}}
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test"}}
 
 	r, _ := http.NewRequest("GET", "/index.html", bytes.NewBufferString(`{"Id":"test","Password":"test"}`))
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeOs"
@@ -36,8 +38,8 @@ func TestParseTokenFromCookie(t *testing.T) {
 }
 
 func TestParseTokenFromCookie_cookienotfound(t *testing.T) {
-	settings.Secretkey = "0000000000"
-	settings.Users = []userType{{Id: "test"}}
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test"}}
 
 	r, _ := http.NewRequest("GET", "/index.html", bytes.NewBufferString(`{"Id":"test","Password":"test"}`))
 	_, err := parseTokenFromCookie(r)
@@ -47,8 +49,8 @@ func TestParseTokenFromCookie_cookienotfound(t *testing.T) {
 }
 
 func TestParseTokenFromCookie_tokenerror(t *testing.T) {
-	settings.Secretkey = "0000000000"
-	settings.Users = []userType{{Id: "test"}}
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test"}}
 
 	r, _ := http.NewRequest("GET", "/index.html", bytes.NewBufferString(`{"Id":"test","Password":"test"}`))
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeO"
@@ -63,8 +65,8 @@ func TestParseTokenFromCookie_tokenerror(t *testing.T) {
 }
 
 func TestParseToken(t *testing.T) {
-	settings.Secretkey = "0000000000"
-	settings.Users = []userType{{Id: "test"}}
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test"}}
 	u, err := parseToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeOs")
 	if err != nil {
 		t.Error(err)
@@ -76,8 +78,8 @@ func TestParseToken(t *testing.T) {
 }
 
 func TestParseToken_idnotfound(t *testing.T) {
-	settings.Secretkey = "0000000000"
-	settings.Users = []userType{{Id: "test2"}}
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test2"}}
 	_, err := parseToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeOs")
 	if err == nil {
 		t.Errorf("error")
@@ -85,8 +87,8 @@ func TestParseToken_idnotfound(t *testing.T) {
 }
 
 func TestParseToken_tokennotfound(t *testing.T) {
-	settings.Secretkey = "0000000000"
-	settings.Users = []userType{{Id: "test"}}
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test"}}
 	_, err := parseToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeO")
 	if err == nil {
 		t.Errorf("error")
@@ -94,7 +96,7 @@ func TestParseToken_tokennotfound(t *testing.T) {
 }
 
 func TestCreateUser(t *testing.T) {
-	settings.Users = []userType{{Id: "test", Password: "test"}}
+	setting.Settings.Users = []setting.UserType{{Id: "test", Password: "test"}}
 	var (
 		buf = bytes.NewBufferString(`{"Id":"test","Password":"test"}`)
 	)
@@ -108,14 +110,14 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestCheckStartBody(t *testing.T) {
-	m := userType{Id: "test", Password: "test"}.Check()
+	m := setting.UserType{Id: "test", Password: "test"}.Check()
 	if m != nil {
 		t.Errorf("error:%s", m)
 	}
 }
 
 func TestCheckStartBody_notfound(t *testing.T) {
-	user := userType{Id: "", Password: ""}.Check()
+	user := setting.UserType{Id: "", Password: ""}.Check()
 	if user == nil {
 		t.Errorf("error")
 	}

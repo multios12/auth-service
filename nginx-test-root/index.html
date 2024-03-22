@@ -7,7 +7,7 @@
         fetch('/private/index.html')
             .then(r => {
                 if (r.status == 401) {
-                    window.location = ("/auth/login");
+                    window.location = ("/auth/login.html");
                 }
             });
     </script>
@@ -15,7 +15,9 @@
 
 <body>
     <h1>テスト </h1>
-    <a href="/auth/logout">ログアウト</a>
+    <a href="/private/index.html">認証が必要なページ</a><br />
+    <a href="/auth/setting.html">設定</a><br />
+    <a href="/auth/api/logout">ログアウト</a>
 </body>
 
 </html>

@@ -6,11 +6,11 @@
     "configurations": [
         {
             "name": "debug react",
-            "type": "pwa-chrome",
+            "type": "msedge",
             "request": "launch",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}",
-            "preLaunchTask": "react-start",
+            "preLaunchTask": "yarn-dev",
             "postDebugTask": "terminate-react-start",
         },
         {

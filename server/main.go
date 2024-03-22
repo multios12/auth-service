@@ -5,37 +5,25 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"path/filepath"
+
+	"github.com/multios12/auth-service/setting"
 )
 
-// ユーザ
-type userType struct {
-	Id         string // ユーザID
-	Password   string // パスワード
-	Permission string // 権限
-}
-
-// 設定
-type settingsType struct {
-	Secretkey string     // 秘密鍵
-	Users     []userType // ユーザ情報
-}
-
 //go:embed static/*
-var static embed.FS       // 静的リソース
-var settingsFile *string  // 設定ファイルパス
-var settings settingsType //設定
+var static embed.FS // 静的リソース
 
 func main() {
 	port := flag.String("port", ":3000", "server port")
-	settingsFile = flag.String("filename", "./setting.json", "setting file name")
+	filename := flag.String("filename", "./setting.json", "setting file name")
+	*filename, _ = filepath.Abs(*filename)
 	flag.Parse()
 
 	fmt.Println("Start: auth-service")
 
-	if e := readAuthSettings(*settingsFile); e != nil {
+	if e := setting.Read(*filename); e != nil {
 		panic(e)
 	}
-	fmt.Printf("Load: setting file[%s]\n", *settingsFile)
 
 	routerInit()
 	if e := http.ListenAndServe(*port, nil); e != nil {

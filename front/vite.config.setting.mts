@@ -7,15 +7,18 @@ import { resolve } from 'path'
 export default defineConfig(() => {
   return {
     root: resolve(__dirname, 'src'),
+//    plugins: [svelte(),purgeCssPlugin2()],
     plugins: [svelte(), purgeCssPlugin(), singleFilePlugin2()],
     build: {
       rollupOptions: {
         input: {
-          login: resolve(__dirname, 'src', 'login.html'),
           setting: resolve(__dirname, 'src', 'setting.html'),
         },
+        output: {
+          compact:true
+        }
       },
-      emptyOutDir: true,
+      emptyOutDir: false,
       outDir: '../dist'
     },
     base: "./",

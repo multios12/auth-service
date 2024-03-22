@@ -9,7 +9,7 @@
 
   const clickSubmit = () => {
     document.querySelector(".notification")?.classList.add("is-hidden");
-    fetch("/auth/start", {
+    fetch("/auth/api/login", {
       method: "post",
       cache: "no-cache",
       body: JSON.stringify(dat),
@@ -36,16 +36,7 @@
 </script>
 
 <main>
-  <header class="navbar is-dark">
-    <div class="navbar-brand">
-      <span class="navbar-item has-text-weight-bold is-size-4"
-        >modern-utopia.net</span
-      >
-      <span class="navbar-item has-text-grey"
-        >In the beginning was the Name</span
-      >
-    </div>
-  </header>
+
   <div class="container">
     <div class="card px-5">
       <header class="card-header px-10">
