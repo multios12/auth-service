@@ -12,7 +12,6 @@ export default defineConfig(() => {
       rollupOptions: {
         input: {
           login: resolve(__dirname, 'src', 'login.html'),
-          setting: resolve(__dirname, 'src', 'setting.html'),
         },
       },
       emptyOutDir: true,
@@ -97,7 +96,6 @@ function singleFilePlugin2(): Plugin {
   }
 }
 
-
 function purgeCssPlugin(): Plugin {
   return {
     name: 'vite:purgeCss',
@@ -131,53 +129,5 @@ function purgeCssPlugin(): Plugin {
         (bundle[cssNames[0]] as any).source = purged[0].css;
       }
     }
-  }
-}
-
-function singleFilePlugin(): Plugin {
-  return {
-    name: 'vite:singleFile',
-    enforce: 'post',
-    async generateBundle(_options, bundle) {
-      const htmlNames = Object.keys(bundle).filter(key => key.endsWith('.html'));
-
-      const deleteTarget = [] as string[]
-      for (const htmlName of htmlNames) {
-        const htmlAsset = bundle[htmlName] as OutputAsset
-        let body = htmlAsset.source as string
-        let filter = htmlName.replace(".html", "")
-
-        let re = new RegExp(`^assets/(${filter}|bulma).*js$`)
-        const jsNames = Object.keys(bundle).filter(key => re.test(key))
-        for (const jsName of jsNames) {
-          const target = `<script type="module" crossorigin src="./${jsName}"></script>|<link rel="modulepreload" crossorigin href="./${jsName}">`
-          re = new RegExp(target)
-          if (re.test(body)) {
-            const jsChunk = bundle[jsName] as OutputChunk
-            const replaced = `<script type="module" crossorigin>\n${jsChunk.code}\n    </script>`
-            body = body.replace(re, replaced)
-            deleteTarget.push(jsName)
-          }
-        }
-
-        re = new RegExp(`^assets/(${filter}|bulma).*css$`)
-        const cssNames = Object.keys(bundle).filter(key => re.test(key))
-        for (const cssName of cssNames) {
-          const target = `<link rel="stylesheet" crossorigin href="./${cssName}">`
-          re = new RegExp(target)
-          if (re.test(body)) {
-            const replaced = `<style type="text/css">\n${(bundle[cssName] as any).source}\n    </style>`
-            body = body.replace(re, replaced);
-            deleteTarget.push(cssName)
-          }
-        }
-        htmlAsset.source = body
-      }
-
-      for (const key of deleteTarget) {
-        delete bundle[key]
-      }
-    }
-
   }
 }

@@ -14,9 +14,9 @@
       ],
       "settings": {
         "editor.codeActionsOnSave": {
-          "source.fixAll.eslint": true // ファイル保存時にESLintでフォーマット
+          "source.fixAll.eslint": "always" // ファイル保存時にESLintでフォーマット
         }
       }
     }
-  },
+  }
 }

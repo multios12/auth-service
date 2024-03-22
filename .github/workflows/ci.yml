@@ -27,10 +27,9 @@ jobs:
       - name: yarn build
         run: |
           yarn --cwd ./front
-          yarn --cwd ./front build
+          yarn --cwd ./front build -c vite.config.login.mts
+          yarn --cwd ./front build -c vite.config.setting.mts
           cp ./front/dist/* ./server/static/ -R
-        env:
-          HTML: index.html
 
       - uses: actions/setup-go@v5
         with:
