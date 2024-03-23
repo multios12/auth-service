@@ -35,6 +35,17 @@
   };
 </script>
 
+
+<header class="navbar is-dark">
+  <div class="navbar-brand">
+    <span class="navbar-item has-text-weight-bold is-size-4"
+      >modern-utopia.net</span
+    >
+    <span class="navbar-item has-text-grey"
+      >In the beginning was the Name</span
+    >
+  </div>
+</header>
 <main>
 
   <div class="container">
