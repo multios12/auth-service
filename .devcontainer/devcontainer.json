@@ -14,8 +14,13 @@
       ],
       "settings": {
         "editor.codeActionsOnSave": {
-          "source.fixAll.eslint": "always" // ファイル保存時にESLintでフォーマット
-        }
+          "source.fixAll.eslint": "always"
+        },
+        "eslint.format.enable": true,
+        "eslint.run": "onSave",
+        "eslint.problems.shortenToSingleLine": true,
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": true
       }
     }
   }

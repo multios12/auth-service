@@ -18,9 +18,8 @@
     })
       .then((r) => {
         if (r.status != 200) {
-          message = "password change failed.";          
+          message = "password change failed.";
         } else {
-
         }
       })
       .catch((r) => {
@@ -28,6 +27,31 @@
       });
   };
 </script>
+
+<header class="navbar is-dark">
+  <div class="navbar-brand">
+    <span class="navbar-item has-text-weight-bold is-size-4"
+      >modern-utopia.net</span
+    >
+    <span class="navbar-item has-text-grey">In the beginning was the Name</span>
+  </div>
+  <div class="navbar-end">
+    <div class="navbar-item">
+      <div class="field is-grouped">
+        <p class="control">
+          <a class="button is-rounded is-dark" href="/">
+            <span class="material-icons"> home </span>
+          </a>
+        </p>
+        <p class="control">
+          <a class="button is-rounded is-dark" href="api/logout">
+            <span class="material-icons"> logout </span>
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</header>
 
 <main>
   <div class="container">
