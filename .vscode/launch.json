@@ -5,15 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "debug react",
-            "type": "msedge",
-            "request": "launch",
-            "url": "http://localhost:3000",
-            "webRoot": "${workspaceFolder}",
-            "preLaunchTask": "yarn-dev",
-            "postDebugTask": "terminate-react-start",
-        },
-        {
             "name": "go API Server",
             "type": "go",
             "request": "launch",
@@ -21,7 +12,7 @@
             "program": "server/.",
             "args": [
                 "-port",
-                ":3001",
+                ":3000",
                 "-filename",
                 "./testdata/setting.json"
             ]
