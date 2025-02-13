@@ -1,11 +1,4 @@
 #!/bin/sh
-
-cd front
-yarn build
-cd ..
-cp ./front/dist/* ./server/static/ -R
-find ./front/dist -delete
-
 cd server
 GOOS=linux
 GOARCH=amd64

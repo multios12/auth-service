@@ -11,25 +11,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20]
     steps:
       - uses: actions/checkout@v3
-
-      # build node.js
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'yarn'
-          cache-dependency-path: ./front/yarn.lock  
-      - name: yarn build
-        run: |
-          yarn --cwd ./front
-          yarn --cwd ./front build -c vite.config.login.mts
-          yarn --cwd ./front build -c vite.config.setting.mts
-          cp ./front/dist/* ./server/static/ -R
 
       - uses: actions/setup-go@v5
         with:
@@ -44,5 +27,5 @@ jobs:
       - name: Upload assets
         uses: actions/upload-artifact@v3
         with:
-          name: sail
-          path: server/dist/*
+          name: auth-service
+          path: dist/*

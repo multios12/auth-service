@@ -12,7 +12,6 @@
 /dist
 /server/static/static
 /server/static/favicon.ico
-/server/static/*.html
 /server/static/asset-manifest.json
 
 # misc

@@ -9,8 +9,7 @@
       "extensions": [
         "golang.go",
         "reliutg.bulma-css-class-completion",
-        "dbaeumer.vscode-eslint",
-        "svelte.svelte-vscode"
+        "dbaeumer.vscode-eslint"
       ],
       "settings": {
         "editor.codeActionsOnSave": {
