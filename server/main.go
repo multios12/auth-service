@@ -1,7 +1,6 @@
 package main
 
 import (
-	"embed"
 	"flag"
 	"fmt"
 	"net/http"
@@ -9,9 +8,6 @@ import (
 
 	"github.com/multios12/auth-service/setting"
 )
-
-//go:embed static/*
-var static embed.FS // 静的リソース
 
 func main() {
 	port := flag.String("port", ":3000", "server port")
