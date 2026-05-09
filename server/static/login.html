@@ -8,6 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Cache-Control" content="no-cache">
   <link rel="icon" href="/favicon.ico" />
+  <link href="https://fonts.googleapis.com/css?family=Anton" rel="stylesheet">
   <script>
     function clickSubmit() {
       document.querySelector(".notification")?.classList.add("is-hidden")
@@ -44,82 +45,202 @@
   </script>
   <style>
     :root {
-      /* カラー：プライマリ */
-      --color-primmary: #002;
-      /* カラー：プライマリ */
-      --color-primary-contract: #eef;
-      /* カラー：情報 */
-      --color-info: #eef;
-      /* カラー：情報*/
-      --color-info-contract: #002;
-      /* カラー：情報 */
-      --color-success: #afc;
-      /* カラー：情報 */
-      --color-success-contract: #20c;
-      /* カラー：エラー */
-      --color-error: #fac;
-      /* カラー：エラー */
-      --color-error-contract: #420;
+      /* ボディ 背景色 */
+      --body-background-color: #020617;
+      /* ボディ 文字色 */
+      --body-color: #e8fbff;
+
+      /* カラー：プライマリ背景色 */
+      --color-primmary: #030817;
+      /* カラー：プライマリアクセント色 */
+      --color-primary: #19c7d5;
+      /* カラー：プライマリ上の文字色 */
+      --color-primary-contract: #e8fbff;
+      /* カラー：情報背景色 */
+      --color-info: #1699f2;
+      /* カラー：情報上の文字色 */
+      --color-info-contract: #020617;
+      /* カラー：成功背景色 */
+      --color-success: #18c7d7;
+      /* カラー：成功上の文字色 */
+      --color-success-contract: #03131c;
+      /* カラー：エラー背景色 */
+      --color-error: #ff6b9a;
+      /* カラー：エラー上の文字色 */
+      --color-error-contract: #1b0610;
 
       /* パネル 背景色 */
-      --panel-bg-color: #fafaff;
+      --panel-bg-color: #081425;
       /* パネル 文字色 */
-      --panel-color: #ddd;
+      --panel-color: #174782;
+      /* パネル 枠線色 */
+      --panel-border-color: #174782;
+      /* パネル 枠線幅 */
+      --panel-border-width: 1px;
+      /* パネル 角丸 */
+      --panel-border-radius: 0.5em;
+      /* パネル 影 */
+      --panel-box-shadow: 0 18px 45px rgba(0, 0, 0, 0.36);
+      /* パネル 外側余白 */
+      --panel-margin: 2em;
+      /* パネル内ボタン間隔 */
+      --panel-content-gap: 0.75em;
+
+      /* ヘッダ 背景グラデーション開始色 */
+      --header-bg-color-start: #030817;
+      /* ヘッダ 背景グラデーション中間色 */
+      --header-bg-color-middle: #071d3d;
+      /* ヘッダ 背景グラデーション終了色 */
+      --header-bg-color-end: #06323c;
+      /* ヘッダ 背景 */
+      --header-background: linear-gradient(90deg,
+          var(--header-bg-color-start) 0%,
+          var(--header-bg-color-middle) 48%,
+          var(--header-bg-color-end) 100%);
+      /* ヘッダ 下線色 */
+      --header-border-color: rgba(25, 199, 213, 0.35);
+      /* ヘッダ 影 */
+      --header-box-shadow: 0 16px 40px rgba(2, 6, 23, 0.5);
+      /* ヘッダ 下余白 */
+      --header-margin-bottom: 1.5em;
+      /* ヘッダ 内側余白 */
+      --header-padding: 0.7em 1em;
+      /* ヘッダ サブタイトル文字色 */
+      --header-sub-title-color: #7ddff0;
+      /* ヘッダ リンク文字色 */
+      --header-link-color: #9eefff;
+
+      /* ボタン 背景 */
+      --button-background: linear-gradient(135deg,
+          rgba(23, 105, 244, 0.95),
+          rgba(25, 199, 213, 0.9));
+      /* ボタン 枠線色 */
+      --button-border-color: rgba(232, 251, 255, 0.18);
+      /* ボタン ホバー時の枠線色 */
+      --button-hover-border-color: rgba(232, 251, 255, 0.5);
+      /* ボタン 角丸 */
+      --button-border-radius: 0.45em;
+      /* ボタン 影 */
+      --button-box-shadow: 0 8px 20px rgba(22, 153, 242, 0.18);
+      /* ボタン ホバー時の影 */
+      --button-hover-box-shadow: 0 10px 28px rgba(25, 199, 213, 0.28);
+      /* ボタン ホバー時の移動量 */
+      --button-hover-transform: translateY(-1px);
+      /* ボタン 内側余白 */
+      --button-padding: 0.55em 0.75em;
+      /* ボタン アニメーション */
+      --button-transition: border-color 120ms ease, box-shadow 120ms ease,
+        transform 120ms ease;
     }
 
     body {
+      background-color: var(--body-background-color);
+      color: var(--body-color);
       margin: 0;
     }
 
     main {
-      margin: 2em;
+      margin: 0 auto;
+      max-width: 44em;
+    }
+
+    /* ヘッダ */
+    header {
+      background: var(--header-background);
+      border-bottom: 1px solid var(--header-border-color);
+      box-shadow: var(--header-box-shadow);
+      color: var(--color-primary-contract);
+      margin-bottom: var(--header-margin-bottom);
+      padding: var(--header-padding);
+    }
+
+    header>.title {
+      color: var(--color-primary-contract);
+      font-family: Anton, sans-serif;
+      font-weight: 700;
+      font-size: 1.5em;
+    }
+
+    header>.sub-title {
+      color: var(--header-sub-title-color);
+    }
+
+    header>a {
+      color: var(--header-link-color);
+      text-align: right;
+      float: right;
+
+      margin: 0.25em;
+      padding: 0px;
+    }
+
+    header>a:visited {
+      color: var(--color-primary-contract);
     }
 
     /* パネル */
     div.panel {
       background-color: var(--panel-bg-color);
 
-      box-shadow: 10px 5px 5px #aaa;
+      margin: var(--panel-margin);
+
+      box-shadow: var(--panel-box-shadow);
       border-style: solid;
-      border-color: var(--panel-color);
-      border-width: 0.1em;
+      border-color: var(--panel-border-color);
+      border-width: var(--panel-border-width);
+      border-radius: var(--panel-border-radius);
     }
 
-    div.panel>.title {
+    .panel>.title {
       color: var(--color-primary);
       font-weight: 600;
 
       margin: 0.25em;
     }
 
-    div.panel>.content,
-    div.panel>footer {
+    .panel>.content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--panel-content-gap);
       margin: 1em;
     }
 
-    .panel>.content>.button:visited {
-      color: var(--color-info-contract);
+    div.panel>footer {
+      margin: 1em;
     }
 
     .button,
     button {
       text-decoration: none;
 
-      color: var(--color-info-contract);
-      background-color: var(--color-info);
+      color: var(--color-primary-contract);
+      background: var(--button-background);
 
-      border: 0.0em;
+      border: 1px solid var(--button-border-color);
       border-style: solid;
-      border-radius: 10%;
+      border-radius: var(--button-border-radius);
+      box-shadow: var(--button-box-shadow);
+      transition: var(--button-transition);
 
       cursor: pointer;
 
-      margin: 0em 0.5em;
-      padding: 0.5em;
+      margin: 0em;
+      padding: var(--button-padding);
+    }
+
+    .button:visited {
+      color: var(--color-primary-contract);
+    }
+
+    .button:hover,
+    button:hover {
+      border-color: var(--button-hover-border-color);
+      box-shadow: var(--button-hover-box-shadow);
+      transform: var(--button-hover-transform);
     }
 
     button.success {
-      color: var(--color-success-contract);
+      color: var(--color-primary-contract);
       background-color: var(--color-success);
     }
 
@@ -131,29 +252,70 @@
     .field {
       font-size: large;
       display: flex;
+      gap: 1em;
       margin: 0.5em;
     }
 
     .field>.label {
       width: 20%;
+      min-width: 7em;
     }
 
     .field>input {
       width: 70%;
       padding: 0.25em;
+      background: #030817;
+      border: 1px solid rgba(25, 199, 213, 0.35);
+      border-radius: 0.35em;
+      color: var(--body-color);
+    }
+
+    .notification {
+      background-color: var(--color-error);
+      border-radius: var(--button-border-radius);
+      color: var(--color-error-contract);
+      padding: 0.65em 0.75em;
+    }
+
+    .is-hidden {
+      display: none;
     }
 
     input,
     button {
       font-size: large;
     }
+
+    @media (max-width: 520px) {
+      main {
+        max-width: none;
+      }
+
+      div.panel {
+        margin: 1em;
+      }
+
+      .field {
+        flex-direction: column;
+        gap: 0.35em;
+      }
+
+      .field>.label,
+      .field>input {
+        width: auto;
+      }
+    }
   </style>
 </head>
 
 <body>
+  <header>
+    <span class="title">modern-utopia.net</span>
+    <span class="sub-title">In the beginning was the name</span>
+  </header>
   <main>
     <div class="panel">
-      <header class="title">login</header>
+      <div class="title">login</div>
       <div class="content">
         <div id="message" class="notification is-danger is-light is-hidden"></div>
         <div class="field">
