@@ -22,13 +22,8 @@ https://qiita.com/OmeletteCurry19/items/f24ee02a942d8f6931a5
 
 ### デバッグ実行手順
 1. 実行とデバッグで「go API Server」を選択、実行
-2. 実行とデバッグで「debug react」を選択、実行
-   ※react上で、react開発サーバが立ち上がっているため、通常2は不要
 
 -------------------------------------------------------------
-## create new react project
-> create-react-app --template typescript
-> yarn add bulma
 
 ### goreleaser
 設定ファイルのチェック

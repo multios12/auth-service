@@ -22,7 +22,7 @@ func TestParseTokenFromCookie(t *testing.T) {
 	setting.Settings.Users = []setting.UserType{{Id: "test"}}
 
 	r, _ := http.NewRequest("GET", "/index.html", bytes.NewBufferString(`{"Id":"test","Password":"test"}`))
-	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeOs"
+	token, _ := createToken("test")
 	ti := time.Now().In(time.UTC).AddDate(0, 0, 7)
 	cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: ti}
 	r.AddCookie(cookie)
@@ -53,7 +53,8 @@ func TestParseTokenFromCookie_tokenerror(t *testing.T) {
 	setting.Settings.Users = []setting.UserType{{Id: "test"}}
 
 	r, _ := http.NewRequest("GET", "/index.html", bytes.NewBufferString(`{"Id":"test","Password":"test"}`))
-	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeO"
+	token, _ := createToken("test")
+	token += "x"
 	ti := time.Now().In(time.UTC).AddDate(0, 0, 7)
 	cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: ti}
 	r.AddCookie(cookie)
@@ -67,7 +68,8 @@ func TestParseTokenFromCookie_tokenerror(t *testing.T) {
 func TestParseToken(t *testing.T) {
 	setting.Settings.Secretkey = "0000000000"
 	setting.Settings.Users = []setting.UserType{{Id: "test"}}
-	u, err := parseToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeOs")
+	token, _ := createToken("test")
+	u, err := parseToken(token)
 	if err != nil {
 		t.Error(err)
 	}
@@ -80,7 +82,8 @@ func TestParseToken(t *testing.T) {
 func TestParseToken_idnotfound(t *testing.T) {
 	setting.Settings.Secretkey = "0000000000"
 	setting.Settings.Users = []setting.UserType{{Id: "test2"}}
-	_, err := parseToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeOs")
+	token, _ := createToken("test")
+	_, err := parseToken(token)
 	if err == nil {
 		t.Errorf("error")
 	}
@@ -89,7 +92,26 @@ func TestParseToken_idnotfound(t *testing.T) {
 func TestParseToken_tokennotfound(t *testing.T) {
 	setting.Settings.Secretkey = "0000000000"
 	setting.Settings.Users = []setting.UserType{{Id: "test"}}
-	_, err := parseToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeO")
+	token, _ := createToken("test")
+	_, err := parseToken(token + "x")
+	if err == nil {
+		t.Errorf("error")
+	}
+}
+
+func TestParseToken_malformed(t *testing.T) {
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test"}}
+	_, err := parseToken("malformed")
+	if err == nil {
+		t.Errorf("error")
+	}
+}
+
+func TestParseToken_expRequired(t *testing.T) {
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test"}}
+	_, err := parseToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeOs")
 	if err == nil {
 		t.Errorf("error")
 	}

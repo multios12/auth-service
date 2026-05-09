@@ -28,7 +28,17 @@ func TestUpdatePassword(t *testing.T) {
 	f.Close()
 
 	Read(filename)
-	UpdatePassword("test", "test2")
+	if e := UpdatePassword("test", "test2"); e != nil {
+		t.Error(e)
+	}
+	if e := UpdatePassword("notfound", "test2"); e == nil {
+		t.Error("error")
+	}
+
+	settingsFile = os.TempDir()
+	if e := UpdatePassword("test", "test3"); e == nil {
+		t.Error("error")
+	}
 }
 
 func TestCreateRandomString(t *testing.T) {

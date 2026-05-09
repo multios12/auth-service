@@ -11,17 +11,23 @@ import (
 	"github.com/multios12/auth-service/setting"
 )
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeOs"
-const errtoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeO"
+var token string
+var errtoken string
 
 func TestMain(m *testing.M) {
 	// 初期化処理
-	setting.Settings.Secretkey = "0000000000"
-	setting.Settings.Users = []setting.UserType{{Id: "test", Password: "test"}}
+	f, _ := os.CreateTemp("", "auth-service-test-setting")
+	filename := f.Name()
+	f.Write([]byte(`{"Secretkey":"0000000000","Users":[{"Id":"test","Password":"test","Permission":""}]}`))
+	f.Close()
+	setting.Read(filename)
+	token, _ = createToken("test")
+	errtoken = token + "x"
 
 	code := m.Run()
 
 	// ここでテストのお片づけ
+	os.Remove(filename)
 	os.Exit(code)
 }
 
@@ -29,13 +35,15 @@ func TestRouterInit(t *testing.T) {
 	routerInit()
 }
 func TestGetAuthHtml(t *testing.T) {
-	w, r := createRequestResponse(http.MethodGet, "/auth/.dummy", ``)
+	w, r := createRequestResponse(http.MethodGet, "/auth/login.html", ``)
+	r.SetPathValue("file", "login.html")
 	getAuthHtml(w, r)
 	if w.Code != http.StatusOK {
 		t.Error()
 	}
 
 	w, r = createRequestResponse(http.MethodGet, "/auth/notfound", ``)
+	r.SetPathValue("file", "notfound")
 	getAuthHtml(w, r)
 	if w.Code != http.StatusNotFound {
 		t.Error()
@@ -83,6 +91,14 @@ func TestPostAuthLogin(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Error()
 	}
+
+	cookies := w.Result().Cookies()
+	if len(cookies) != 1 || !cookies[0].HttpOnly {
+		t.Error()
+	}
+	if cookies[0].Secure {
+		t.Error()
+	}
 }
 
 func TestAuthStart_IdError(t *testing.T) {
@@ -112,7 +128,7 @@ func TestGetAuthApiInfo(t *testing.T) {
 	ti := time.Now().In(time.UTC).AddDate(0, 0, 7)
 	cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: ti}
 	r.AddCookie(cookie)
-	authApiInfo(w, r)
+	getAuthApiInfo(w, r)
 	if w.Code != http.StatusOK {
 		t.Error()
 		return
@@ -122,20 +138,45 @@ func TestGetAuthApiInfo(t *testing.T) {
 	ti = time.Now().In(time.UTC).AddDate(0, 0, 7)
 	cookie = &http.Cookie{Name: "_auth-proxy", Value: errtoken, SameSite: http.SameSiteLaxMode, Path: "/", Expires: ti}
 	r.AddCookie(cookie)
-	authApiInfo(w, r)
+	getAuthApiInfo(w, r)
 	if w.Code == http.StatusOK {
 		t.Error()
 	}
 }
 func TestPostAuthApiInfo(t *testing.T) {
-	w, r := createRequestResponse(http.MethodGet, "/auth/api/info", `{"OldPassword":"test","NewPassword":"test"}`)
+	w, r := createRequestResponse(http.MethodPost, "/auth/api/info", `{"OldPassword":"test","NewPassword":"test"}`)
 	ti := time.Now().In(time.UTC).AddDate(0, 0, 7)
 	cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: ti}
 	r.AddCookie(cookie)
-	authApiInfo(w, r)
+	postAuthApiinfo(w, r)
 	if w.Code != http.StatusOK {
 		t.Error()
 		return
+	}
+}
+
+func TestPostAuthApiInfoBadRequest(t *testing.T) {
+	w, r := createRequestResponse(http.MethodPost, "/auth/api/info", `{"OldPassword":"test"`)
+	createTokenCookie(r, false)
+	postAuthApiinfo(w, r)
+	if w.Code != http.StatusBadRequest {
+		t.Error()
+	}
+
+	w, r = createRequestResponse(http.MethodPost, "/auth/api/info", `{"OldPassword":"test","NewPassword":""}`)
+	createTokenCookie(r, false)
+	postAuthApiinfo(w, r)
+	if w.Code != http.StatusBadRequest {
+		t.Error()
+	}
+}
+
+func TestPostAuthApiInfoUnauthorized(t *testing.T) {
+	w, r := createRequestResponse(http.MethodPost, "/auth/api/info", `{"OldPassword":"error","NewPassword":"test2"}`)
+	createTokenCookie(r, false)
+	postAuthApiinfo(w, r)
+	if w.Code != http.StatusUnauthorized {
+		t.Error()
 	}
 }
 

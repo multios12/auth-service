@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"path"
 	"time"
@@ -13,28 +12,25 @@ import (
 
 // ルーティング設定とサーバ立ち上げを行う
 func routerInit() {
-	http.HandleFunc("/auth/api/login", postAuthApiLogin)
-	http.HandleFunc("/auth/api/logout", getAuthApiLogout)
-	http.HandleFunc("/auth/api/auth", authApiAuth)
-	http.HandleFunc("/auth/api/info", authApiInfo)
-	// http.HandleFunc("GET  /auth/api/info", getAuthApiInfo)
-	// http.HandleFunc("POST /auth/api/info", postAuthApiinfo)
+	http.HandleFunc("POST /auth/api/login", postAuthApiLogin)
+	http.HandleFunc("GET  /auth/api/logout", getAuthApiLogout)
+	http.HandleFunc("GET  /auth/api/auth", authApiAuth)
+	http.HandleFunc("GET  /auth/api/info", getAuthApiInfo)
+	http.HandleFunc("POST /auth/api/info", postAuthApiinfo)
 
-	// TODO:ユーザ管理画面の実装
-	// http.HandleFunc("/auth/api/users", authUsers)
-	http.HandleFunc("/auth/", getAuthHtml)
+	http.HandleFunc("GET  /auth/{file...}", getAuthHtml)
 }
 
 // /auth/*.html 指定されたファイルを返す
 func getAuthHtml(w http.ResponseWriter, r *http.Request) {
-	var filename string = r.URL.Path[len("/auth/"):]
-	filename = path.Join("static", filename)
+	filename := path.Join("static", r.PathValue("file"))
 
-	if b, err := static.ReadFile(filename); err != nil {
+	b, err := static.ReadFile(filename)
+	if err != nil {
 		writeResponse(w, r, http.StatusNotFound)
-	} else {
-		writeResponseBody(w, r, http.StatusOK, b)
+		return
 	}
+	writeResponseBody(w, r, http.StatusOK, b)
 }
 
 // /auth/api/login id/passwordを取得し、認証処理を実行する
@@ -51,7 +47,7 @@ func postAuthApiLogin(w http.ResponseWriter, r *http.Request) {
 		writeResponse(w, r, http.StatusUnauthorized)
 	} else {
 		t := time.Now().In(time.UTC).AddDate(0, 0, 7)
-		cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: t}
+		cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: t, HttpOnly: true}
 
 		http.SetCookie(w, cookie)
 		writeResponse(w, r, http.StatusOK)
@@ -63,6 +59,8 @@ func getAuthApiLogout(w http.ResponseWriter, r *http.Request) {
 	if cookie, e := r.Cookie("_auth-proxy"); e == nil {
 		cookie.MaxAge = -1 // クッキーをクリアするため、MaxAgeフィールドに-1を指定
 		cookie.Path = "/"
+		cookie.HttpOnly = true
+		cookie.SameSite = http.SameSiteLaxMode
 		http.SetCookie(w, cookie)
 	}
 
@@ -73,19 +71,12 @@ func getAuthApiLogout(w http.ResponseWriter, r *http.Request) {
 func authApiAuth(w http.ResponseWriter, r *http.Request) {
 	if _, e := parseTokenFromCookie(r); e != nil {
 		writeResponse(w, r, http.StatusUnauthorized)
-	} else {
-		writeResponse(w, r, http.StatusAccepted)
+		return
 	}
+	writeResponse(w, r, http.StatusAccepted)
 }
 
 // ----------------------------------------------------------------------------
-func authApiInfo(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		postAuthApiinfo(w, r)
-	} else {
-		getAuthApiInfo(w, r)
-	}
-}
 
 // GET auth/api/setting 現在のユーザの設定を返す
 func getAuthApiInfo(w http.ResponseWriter, r *http.Request) {
@@ -96,11 +87,9 @@ func getAuthApiInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == http.MethodGet {
-		u.Password = ""
-		body, _ := json.Marshal(u)
-		writeResponseBody(w, r, http.StatusOK, body)
-	}
+	u.Password = ""
+	body, _ := json.Marshal(u)
+	writeResponseBody(w, r, http.StatusOK, body)
 }
 
 // POST auth/api/setting/password パスワードを変更する
@@ -111,13 +100,26 @@ func postAuthApiinfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, _ := io.ReadAll(r.Body)
 	var change setting.ChangeType
-	json.Unmarshal(bytes, &change)
+	if e := json.NewDecoder(r.Body).Decode(&change); e != nil {
+		writeResponse(w, r, http.StatusBadRequest)
+		return
+	}
+	if change.OldPassword == "" || change.NewPassword == "" {
+		writeResponse(w, r, http.StatusBadRequest)
+		return
+	}
 
 	if u.Password == change.OldPassword {
-		setting.UpdatePassword(u.Id, change.NewPassword)
+		if e := setting.UpdatePassword(u.Id, change.NewPassword); e != nil {
+			writeResponse(w, r, http.StatusInternalServerError)
+			return
+		}
+		writeResponse(w, r, http.StatusOK)
+		return
 	}
+
+	writeResponse(w, r, http.StatusUnauthorized)
 }
 
 // ----------------------------------------------------------------------------
@@ -143,5 +145,7 @@ func writeResponse(w http.ResponseWriter, r *http.Request, code int) {
 		w.Write([]byte("401 unauthorized"))
 	case http.StatusNotFound:
 		w.Write([]byte("404 page notfound"))
+	case http.StatusInternalServerError:
+		w.Write([]byte("500 internal server error"))
 	}
 }

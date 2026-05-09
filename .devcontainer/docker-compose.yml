@@ -1,6 +1,4 @@
 # DevContainers
-volumes:
-  auth_service-node_modules:
 services:
   app:
     build:
@@ -11,7 +9,6 @@ services:
       - "3000:3000"
     volumes:
       - ../:/workspace
-      - auth_service-node_modules:/workspace/front/node_modules
   nginx:
     image: nginx:latest
     ports:

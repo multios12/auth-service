@@ -33,14 +33,19 @@ func Write() error {
 	return os.WriteFile(settingsFile, b, os.ModePerm)
 }
 
-func UpdatePassword(id string, password string) {
-	for i, _ := range Settings.Users {
+func UpdatePassword(id string, password string) error {
+	for i := range Settings.Users {
 		if Settings.Users[i].Id == id {
+			oldPassword := Settings.Users[i].Password
 			Settings.Users[i].Password = password
-			Write()
-			break
+			if e := Write(); e != nil {
+				Settings.Users[i].Password = oldPassword
+				return e
+			}
+			return nil
 		}
 	}
+	return fmt.Errorf("user notfound")
 }
 
 func createRandomString(digit uint32) string {
