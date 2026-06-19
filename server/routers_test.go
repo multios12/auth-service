@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -96,7 +97,24 @@ func TestPostAuthLogin(t *testing.T) {
 	if len(cookies) != 1 || !cookies[0].HttpOnly {
 		t.Error()
 	}
-	if cookies[0].Secure {
+	if !cookies[0].Secure {
+		t.Error()
+	}
+}
+
+func TestPostAuthLogin_ReturnToken(t *testing.T) {
+	w, r := createRequestResponse(http.MethodPost, "/auth/api/login", `{"Id":"test","Password":"test"}`)
+	r.Header.Set("X-Return-Token", "true")
+	postAuthApiLogin(w, r)
+	if w.Code != http.StatusOK {
+		t.Error()
+	}
+
+	if got := w.Body.String(); got == "" {
+		t.Error()
+	}
+	cookies := w.Result().Cookies()
+	if len(cookies) != 1 || !cookies[0].Secure {
 		t.Error()
 	}
 }
@@ -144,6 +162,13 @@ func TestGetAuthApiInfo(t *testing.T) {
 	}
 }
 func TestPostAuthApiInfo(t *testing.T) {
+	origSecret := setting.Settings.Secretkey
+	origUsers := append([]setting.UserType(nil), setting.Settings.Users...)
+	t.Cleanup(func() {
+		users := append([]setting.UserType(nil), origUsers...)
+		setting.Settings = setting.SettingsType{Secretkey: origSecret, Users: users}
+	})
+
 	w, r := createRequestResponse(http.MethodPost, "/auth/api/info", `{"OldPassword":"test","NewPassword":"test"}`)
 	ti := time.Now().In(time.UTC).AddDate(0, 0, 7)
 	cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: ti}
@@ -152,6 +177,49 @@ func TestPostAuthApiInfo(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Error()
 		return
+	}
+}
+
+func TestPostAuthLoginRateLimited(t *testing.T) {
+	key := loginRateLimitKey(&http.Request{Header: http.Header{}, RemoteAddr: "203.0.113.10:1234"}, "test")
+	authLoginLimiter.Reset(key)
+	t.Cleanup(func() { authLoginLimiter.Reset(key) })
+
+	for i := 0; i < loginFailureLimit; i++ {
+		w, r := createRequestResponse(http.MethodPost, "/auth/api/login", `{"Id":"test","Password":"wrong"}`)
+		r.RemoteAddr = "203.0.113.10:1234"
+		postAuthApiLogin(w, r)
+		if w.Code != http.StatusUnauthorized {
+			t.Fatalf("attempt %d: got %d, want %d", i+1, w.Code, http.StatusUnauthorized)
+		}
+	}
+
+	w, r := createRequestResponse(http.MethodPost, "/auth/api/login", `{"Id":"test","Password":"wrong"}`)
+	r.RemoteAddr = "203.0.113.10:1234"
+	postAuthApiLogin(w, r)
+	if w.Code != http.StatusTooManyRequests {
+		t.Fatalf("got %d, want %d", w.Code, http.StatusTooManyRequests)
+	}
+}
+
+func TestPostAuthLoginBodyTooLarge(t *testing.T) {
+	bigBody := `{"Id":"test","Password":"` + strings.Repeat("x", int(maxRequestBodyBytes)) + `"}`
+	w, r := createRequestResponse(http.MethodPost, "/auth/api/login", bigBody)
+	postAuthApiLogin(w, r)
+	if w.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("got %d, want %d", w.Code, http.StatusRequestEntityTooLarge)
+	}
+}
+
+func TestAuthApiAuthRejectsMalformedAuthorization(t *testing.T) {
+	w, r := createRequestResponse(http.MethodGet, "/auth/api/auth", ``)
+	r.Header.Set("Authorization", "Basic abc")
+	ti := time.Now().In(time.UTC).AddDate(0, 0, 7)
+	cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: ti}
+	r.AddCookie(cookie)
+	authApiAuth(w, r)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("got %d, want %d", w.Code, http.StatusUnauthorized)
 	}
 }
 

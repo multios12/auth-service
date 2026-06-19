@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+// 設定ファイルを読み込む
 func Read(filename string) error {
 	settingsFile = filename
 
@@ -28,18 +29,23 @@ func Read(filename string) error {
 	return e
 }
 
+// 設定ファイルを書き込む
 func Write() error {
 	b, _ := json.Marshal(Settings)
-	return os.WriteFile(settingsFile, b, os.ModePerm)
+	return os.WriteFile(settingsFile, b, 0o600)
 }
 
+// 指定ユーザのパスワードを更新する
 func UpdatePassword(id string, password string) error {
 	for i := range Settings.Users {
 		if Settings.Users[i].Id == id {
 			oldPassword := Settings.Users[i].Password
+			oldTokenVersion := Settings.Users[i].TokenVersion
 			Settings.Users[i].Password = password
+			Settings.Users[i].TokenVersion++
 			if e := Write(); e != nil {
 				Settings.Users[i].Password = oldPassword
+				Settings.Users[i].TokenVersion = oldTokenVersion
 				return e
 			}
 			return nil
@@ -48,6 +54,7 @@ func UpdatePassword(id string, password string) error {
 	return fmt.Errorf("user notfound")
 }
 
+// 指定長のランダム文字列を生成する
 func createRandomString(digit uint32) string {
 	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 

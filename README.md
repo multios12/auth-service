@@ -1,30 +1,69 @@
 # 認証サービス
 
+nginx の `auth_request` と組み合わせて使うシンプルな認証サービスです。
+
+## できること
+
+- ログイン画面の表示
+- ログイン / ログアウト
+- 認証チェック
+- ユーザ情報の取得
+- パスワード変更
+
+## 起動方法
+
+### 開発環境
+
+必要なもの:
+
+- VS Code
+- Docker Desktop
+- VS Code の `Remote - Containers` または `Dev Containers`
+
+VS Code で `Ctrl+Shift+P` を押し、`Reopen in Container` を選ぶと開発環境を起動できます。
+
+### サーバ起動
+
+`server` ディレクトリで起動します。
+
+```bash
+go run . -port :3000 -filename ./setting.json
+```
+
+- `-port`: 待ち受けポート
+- `-filename`: 設定ファイルのパス
+
+## 設定ファイル
+
+初回起動時は、指定した設定ファイルがなければ自動生成されます。
+
+設定例:
+
+```json
+{"Secretkey":"xxxxxxxxxxxxxxxxxxxx","Users":[{"Id":"test","Password":"test","Permission":""}]}
+```
+
+- `Secretkey`: トークン署名用の秘密鍵
+- `Users`: ログイン可能なユーザ一覧
+
 ## API
-* /auth/login.html   - GET  - ログインページを表示する
-* /auth/setting.html - GET  - 設定ページを表示する
-* /auth/api/login    - POST - 認証処理を行う。ログインに成功した場合、"/"にリダイレクトするAPI
-* /auth/api/logout   - GET  - 認証情報をクリアし、ログインページにリダイレクトするAPI
-* /auth/api/auth     - GET  - nginx auth_requestモジュールのためのAPI。レスポンスコード202 authorizedまたは、401 unauthorizedを返すAPI
-* /auth/api/info     - GET  - ユーザ情報を返すAPI
-* /auth/api/info     - POST - ユーザ情報を設定するAPI
+
+- `GET /auth/login.html` - ログインページを表示
+- `GET /auth/setting.html` - 設定ページを表示
+- `POST /auth/api/login` - ログイン処理
+- `GET /auth/api/logout` - ログアウト処理
+- `GET /auth/api/auth` - nginx の `auth_request` 用認証チェック。`202` または `401` を返す
+- `GET /auth/api/info` - ユーザ情報を取得
+- `POST /auth/api/info` - パスワードを変更
+
+## ビルド確認
+
+```bash
+goreleaser check
+```
 
 ## 参考
-https://github.com/oauth2-proxy/oauth2-proxy
-https://qiita.com/convto/items/2822d029349cb1b4df93
-https://qiita.com/OmeletteCurry19/items/f24ee02a942d8f6931a5
 
--------------------------------------------------------------
-## 開発環境の立ち上げ方法
-  必須ソフトウェア：VS Code, Docker Desktop
-    ※VS Codeに[Remote - Containers] [Remote Development]Extensionをインストール
-  Vscode上でCTRL+SHIFT+P押下、[Reopen in Container]選択で開発環境の立ち上げが可能
-
-### デバッグ実行手順
-1. 実行とデバッグで「go API Server」を選択、実行
-
--------------------------------------------------------------
-
-### goreleaser
-設定ファイルのチェック
-> goreleaser check
+- https://github.com/oauth2-proxy/oauth2-proxy
+- https://qiita.com/convto/items/2822d029349cb1b4df93
+- https://qiita.com/OmeletteCurry19/items/f24ee02a942d8f6931a5

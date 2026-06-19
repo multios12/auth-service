@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"path"
@@ -37,19 +38,56 @@ func getAuthHtml(w http.ResponseWriter, r *http.Request) {
 func postAuthApiLogin(w http.ResponseWriter, r *http.Request) {
 	if len(setting.Settings.Users) == 0 {
 		writeResponse(w, r, http.StatusNotFound)
-	} else if u, e := createUser(r.Body); e != nil {
-		writeResponse(w, r, http.StatusUnauthorized)
-	} else if e := u.Check(); e != nil {
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
+	u, e := createUser(r.Body)
+	if e != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(e, &maxBytesErr) {
+			writeResponse(w, r, http.StatusRequestEntityTooLarge)
+		} else {
+			writeResponse(w, r, http.StatusUnauthorized)
+		}
+		authLoginLimiter.RecordFailure(loginRateLimitKey(r, ""))
+		return
+	}
+
+	if e := u.Check(); e != nil {
+		authLoginLimiter.RecordFailure(loginRateLimitKey(r, u.Id))
 		writeResponse(w, r, http.StatusBadRequest)
-	} else if e := u.CheckUser(); e != nil {
+		return
+	}
+
+	key := loginRateLimitKey(r, u.Id)
+	if ok, retryAfter := authLoginLimiter.Allow(key); !ok {
+		w.Header().Set("Retry-After", fmt.Sprintf("%d", int(retryAfter.Seconds())))
+		writeResponse(w, r, http.StatusTooManyRequests)
+		return
+	}
+
+	if e := u.CheckUser(); e != nil {
+		authLoginLimiter.RecordFailure(key)
 		writeResponse(w, r, http.StatusUnauthorized)
-	} else if token, e := createToken(u.Id); e != nil {
+		return
+	}
+
+	authLoginLimiter.Reset(key)
+	if token, e := createToken(u.Id, u.TokenVersion); e != nil {
 		writeResponse(w, r, http.StatusUnauthorized)
 	} else {
+		// トークンをクッキーに保存
 		t := time.Now().In(time.UTC).AddDate(0, 0, 7)
-		cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: t, HttpOnly: true}
-
+		cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: t, HttpOnly: true, Secure: true}
 		http.SetCookie(w, cookie)
+
+		// トークンをレスポンスに返す
+		if r.Header.Get("X-Return-Token") == "true" {
+			body, _ := json.Marshal(map[string]string{"token": token})
+			writeResponseBody(w, r, http.StatusOK, body)
+			return
+		}
 		writeResponse(w, r, http.StatusOK)
 	}
 }
@@ -61,6 +99,7 @@ func getAuthApiLogout(w http.ResponseWriter, r *http.Request) {
 		cookie.Path = "/"
 		cookie.HttpOnly = true
 		cookie.SameSite = http.SameSiteLaxMode
+		cookie.Secure = true
 		http.SetCookie(w, cookie)
 	}
 
@@ -87,8 +126,13 @@ func getAuthApiInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u.Password = ""
-	body, _ := json.Marshal(u)
+	body, _ := json.Marshal(struct {
+		Id         string `json:"Id"`
+		Permission string `json:"Permission"`
+	}{
+		Id:         u.Id,
+		Permission: u.Permission,
+	})
 	writeResponseBody(w, r, http.StatusOK, body)
 }
 
@@ -100,8 +144,14 @@ func postAuthApiinfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
 	var change setting.ChangeType
 	if e := json.NewDecoder(r.Body).Decode(&change); e != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(e, &maxBytesErr) {
+			writeResponse(w, r, http.StatusRequestEntityTooLarge)
+			return
+		}
 		writeResponse(w, r, http.StatusBadRequest)
 		return
 	}
@@ -143,6 +193,10 @@ func writeResponse(w http.ResponseWriter, r *http.Request, code int) {
 		w.Write([]byte("400 bad request"))
 	case http.StatusUnauthorized:
 		w.Write([]byte("401 unauthorized"))
+	case http.StatusTooManyRequests:
+		w.Write([]byte("429 too many requests"))
+	case http.StatusRequestEntityTooLarge:
+		w.Write([]byte("413 request entity too large"))
 	case http.StatusNotFound:
 		w.Write([]byte("404 page notfound"))
 	case http.StatusInternalServerError:

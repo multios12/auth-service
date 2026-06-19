@@ -37,6 +37,24 @@ func TestParseTokenFromCookie(t *testing.T) {
 	}
 }
 
+func TestParseTokenFromBearer(t *testing.T) {
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test"}}
+
+	r, _ := http.NewRequest("GET", "/index.html", bytes.NewBufferString(`{"Id":"test","Password":"test"}`))
+	token, _ := createToken("test")
+	r.Header.Set("Authorization", "Bearer "+token)
+
+	u, err := parseTokenFromCookie(r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if u.Id != "test" {
+		t.Errorf("id error")
+	}
+}
+
 func TestParseTokenFromCookie_cookienotfound(t *testing.T) {
 	setting.Settings.Secretkey = "0000000000"
 	setting.Settings.Users = []setting.UserType{{Id: "test"}}
@@ -114,6 +132,33 @@ func TestParseToken_expRequired(t *testing.T) {
 	_, err := parseToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJuYmYiOjE2NDQ1NDIxMjd9.QUFkNxp5BI-K9pCdMP6l5TDNHPHWRHd4i6SZy99zeOs")
 	if err == nil {
 		t.Errorf("error")
+	}
+}
+
+func TestParseTokenVersionMismatch(t *testing.T) {
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test", TokenVersion: 1}}
+	token, _ := createToken("test", 0)
+	_, err := parseToken(token)
+	if err == nil {
+		t.Errorf("error")
+	}
+}
+
+func TestParseTokenFromCookieRejectsMalformedAuthorization(t *testing.T) {
+	setting.Settings.Secretkey = "0000000000"
+	setting.Settings.Users = []setting.UserType{{Id: "test"}}
+
+	r, _ := http.NewRequest("GET", "/index.html", bytes.NewBufferString(`{"Id":"test","Password":"test"}`))
+	token, _ := createToken("test")
+	ti := time.Now().In(time.UTC).AddDate(0, 0, 7)
+	cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: ti}
+	r.AddCookie(cookie)
+	r.Header.Set("Authorization", "Basic abc")
+
+	_, err := parseTokenFromCookie(r)
+	if err == nil {
+		t.Error(err)
 	}
 }
 

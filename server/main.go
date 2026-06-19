@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/multios12/auth-service/setting"
 )
@@ -22,7 +23,14 @@ func main() {
 	}
 
 	routerInit()
-	if e := http.ListenAndServe(*port, nil); e != nil {
+	server := &http.Server{
+		Addr:              *port,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	if e := server.ListenAndServe(); e != nil {
 		panic(e)
 	}
 }
