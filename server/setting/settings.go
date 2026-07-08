@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 )
 
 // 設定ファイルを読み込む
@@ -27,6 +28,14 @@ func Read(filename string) error {
 		}
 	}
 	return e
+}
+
+// 有効な認証モードを返す
+func Mode() int {
+	if Settings.Mode == 2 || Settings.Mode == 3 {
+		return Settings.Mode
+	}
+	return 1
 }
 
 // 設定ファイルを書き込む
@@ -52,6 +61,105 @@ func UpdatePassword(id string, password string) error {
 		}
 	}
 	return fmt.Errorf("user notfound")
+}
+
+// 指定ユーザにWebAuthnユーザハンドルがなければ作成する
+func EnsureUserHandle(id string) (string, error) {
+	for i := range Settings.Users {
+		if Settings.Users[i].Id == id {
+			if Settings.Users[i].UserHandle != "" {
+				return Settings.Users[i].UserHandle, nil
+			}
+
+			oldUserHandle := Settings.Users[i].UserHandle
+			Settings.Users[i].UserHandle = createRandomString(43)
+			if e := Write(); e != nil {
+				Settings.Users[i].UserHandle = oldUserHandle
+				return "", e
+			}
+			return Settings.Users[i].UserHandle, nil
+		}
+	}
+	return "", fmt.Errorf("user notfound")
+}
+
+// 指定ユーザにパスキー情報を追加する
+func AddPasskey(id string, passkey PasskeyType) error {
+	for i := range Settings.Users {
+		if Settings.Users[i].Id == id {
+			oldPasskeys := append([]PasskeyType(nil), Settings.Users[i].Passkeys...)
+			if passkey.CreatedAt == "" {
+				passkey.CreatedAt = time.Now().In(time.UTC).Format(time.RFC3339)
+			}
+			for j := range Settings.Users[i].Passkeys {
+				if Settings.Users[i].Passkeys[j].CredentialID == passkey.CredentialID {
+					Settings.Users[i].Passkeys[j] = passkey
+					if e := Write(); e != nil {
+						Settings.Users[i].Passkeys = oldPasskeys
+						return e
+					}
+					return nil
+				}
+			}
+			Settings.Users[i].Passkeys = append(Settings.Users[i].Passkeys, passkey)
+			if e := Write(); e != nil {
+				Settings.Users[i].Passkeys = oldPasskeys
+				return e
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("user notfound")
+}
+
+// 指定した認証情報IDのパスキー情報を更新する
+func UpdatePasskey(credentialID string, passkey PasskeyType) error {
+	for i := range Settings.Users {
+		for j := range Settings.Users[i].Passkeys {
+			if Settings.Users[i].Passkeys[j].CredentialID == credentialID {
+				oldPasskey := Settings.Users[i].Passkeys[j]
+				Settings.Users[i].Passkeys[j] = passkey
+				if e := Write(); e != nil {
+					Settings.Users[i].Passkeys[j] = oldPasskey
+					return e
+				}
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("passkey notfound")
+}
+
+// 指定したユーザIDのユーザ情報を返す
+func FindUserByID(id string) (UserType, bool) {
+	for _, u := range Settings.Users {
+		if u.Id == id {
+			return u, true
+		}
+	}
+	return UserType{}, false
+}
+
+// 指定したWebAuthnユーザハンドルのユーザ情報を返す
+func FindUserByHandle(userHandle string) (UserType, bool) {
+	for _, u := range Settings.Users {
+		if u.UserHandle == userHandle {
+			return u, true
+		}
+	}
+	return UserType{}, false
+}
+
+// 指定した認証情報IDのユーザ情報を返す
+func FindUserByCredentialID(credentialID string) (UserType, bool) {
+	for _, u := range Settings.Users {
+		for _, p := range u.Passkeys {
+			if p.CredentialID == credentialID {
+				return u, true
+			}
+		}
+	}
+	return UserType{}, false
 }
 
 // 指定長のランダム文字列を生成する

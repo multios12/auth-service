@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,23 +9,39 @@ import (
 	"path"
 	"time"
 
+	"github.com/go-webauthn/webauthn/protocol"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/multios12/auth-service/setting"
 )
 
 // ルーティング設定とサーバ立ち上げを行う
 func routerInit() {
-	http.HandleFunc("POST /auth/api/login", postAuthApiLogin)
+	if setting.Mode() != 3 {
+		http.HandleFunc("POST /auth/api/login", postAuthApiLogin)
+	}
 	http.HandleFunc("GET  /auth/api/logout", getAuthApiLogout)
 	http.HandleFunc("GET  /auth/api/auth", authApiAuth)
 	http.HandleFunc("GET  /auth/api/info", getAuthApiInfo)
 	http.HandleFunc("POST /auth/api/info", postAuthApiinfo)
+	if setting.Mode() == 2 {
+		http.HandleFunc("POST /auth/api/passkey/register/options", postAuthApiPasskeyRegisterOptions)
+		http.HandleFunc("POST /auth/api/passkey/register/verify", postAuthApiPasskeyRegisterVerify)
+	}
+	if setting.Mode() == 3 {
+		http.HandleFunc("POST /auth/api/passkey/login/options", postAuthApiPasskeyLoginOptions)
+		http.HandleFunc("POST /auth/api/passkey/login/verify", postAuthApiPasskeyLoginVerify)
+	}
 
 	http.HandleFunc("GET  /auth/{file...}", getAuthHtml)
 }
 
 // /auth/*.html 指定されたファイルを返す
 func getAuthHtml(w http.ResponseWriter, r *http.Request) {
-	filename := path.Join("static", r.PathValue("file"))
+	file := r.PathValue("file")
+	if file == "login.html" && setting.Mode() == 3 {
+		file = "passkey-login.html"
+	}
+	filename := path.Join("static", file)
 
 	b, err := static.ReadFile(filename)
 	if err != nil {
@@ -82,9 +99,19 @@ func postAuthApiLogin(w http.ResponseWriter, r *http.Request) {
 		cookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: t, HttpOnly: true, Secure: true}
 		http.SetCookie(w, cookie)
 
+		next := "/"
+		if setting.Mode() == 2 {
+			next = "/auth/passkey-register.html"
+		}
+
 		// トークンをレスポンスに返す
 		if r.Header.Get("X-Return-Token") == "true" {
-			body, _ := json.Marshal(map[string]string{"token": token})
+			body, _ := json.Marshal(map[string]string{"token": token, "next": next})
+			writeResponseBody(w, r, http.StatusOK, body)
+			return
+		}
+		if r.Header.Get("Accept") == "application/json" || r.Header.Get("X-Return-Next") == "true" {
+			body, _ := json.Marshal(map[string]string{"next": next})
 			writeResponseBody(w, r, http.StatusOK, body)
 			return
 		}
@@ -170,6 +197,222 @@ func postAuthApiinfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeResponse(w, r, http.StatusUnauthorized)
+}
+
+// ----------------------------------------------------------------------------
+
+// /auth/api/passkey/register/options パスキー登録用のチャレンジを返す
+func postAuthApiPasskeyRegisterOptions(w http.ResponseWriter, r *http.Request) {
+	u, e := parseTokenFromCookie(r)
+	if e != nil {
+		writeResponse(w, r, http.StatusUnauthorized)
+		return
+	}
+
+	if _, e := setting.EnsureUserHandle(u.Id); e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+	u, ok := setting.FindUserByID(u.Id)
+	if !ok {
+		writeResponse(w, r, http.StatusUnauthorized)
+		return
+	}
+
+	wa, e := newWebAuthn(r)
+	if e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+	creation, session, e := wa.BeginRegistration(
+		passkeyUser{user: u},
+		webauthn.WithResidentKeyRequirement(protocol.ResidentKeyRequirementRequired),
+		webauthn.WithAuthenticatorSelection(discoverableAuthenticatorSelection()),
+	)
+	if e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+
+	sessionID, e := createSessionID()
+	if e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+	passkeySessions.set(sessionID, passkeySessionEntry{
+		Session: *session,
+		Kind:    passkeySessionKindRegister,
+		UserID:  u.Id,
+		Expires: time.Now().Add(passkeySessionTTL),
+	})
+	setPasskeySessionCookie(w, r, sessionID, passkeySessionTTL)
+
+	body, _ := json.Marshal(creation)
+	writeResponseBody(w, r, http.StatusOK, body)
+}
+
+// /auth/api/passkey/register/verify パスキー登録結果を検証して保存する
+func postAuthApiPasskeyRegisterVerify(w http.ResponseWriter, r *http.Request) {
+	u, e := parseTokenFromCookie(r)
+	if e != nil {
+		writeResponse(w, r, http.StatusUnauthorized)
+		return
+	}
+
+	cookie, e := r.Cookie(passkeySessionCookieName)
+	if e != nil {
+		writeResponse(w, r, http.StatusBadRequest)
+		return
+	}
+	entry, ok := passkeySessions.take(cookie.Value, passkeySessionKindRegister)
+	clearPasskeySessionCookie(w, r)
+	if !ok || entry.UserID != u.Id {
+		writeResponse(w, r, http.StatusBadRequest)
+		return
+	}
+
+	u, ok = setting.FindUserByID(u.Id)
+	if !ok {
+		writeResponse(w, r, http.StatusUnauthorized)
+		return
+	}
+
+	wa, e := newWebAuthn(r)
+	if e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxPasskeyRequestBodyBytes)
+	credential, e := wa.FinishRegistration(passkeyUser{user: u}, entry.Session, r)
+	if e != nil {
+		writeResponse(w, r, http.StatusBadRequest)
+		return
+	}
+
+	passkey, e := credentialToPasskey(credential, setting.PasskeyType{})
+	if e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+	if e := setting.AddPasskey(u.Id, passkey); e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+	writeResponse(w, r, http.StatusOK)
+}
+
+// /auth/api/passkey/login/options パスキー認証用のチャレンジを返す
+func postAuthApiPasskeyLoginOptions(w http.ResponseWriter, r *http.Request) {
+	wa, e := newWebAuthn(r)
+	if e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+	assertion, session, e := wa.BeginDiscoverableLogin(webauthn.WithUserVerification(protocol.VerificationPreferred))
+	if e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+
+	sessionID, e := createSessionID()
+	if e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+	passkeySessions.set(sessionID, passkeySessionEntry{
+		Session: *session,
+		Kind:    passkeySessionKindLogin,
+		Expires: time.Now().Add(passkeySessionTTL),
+	})
+	setPasskeySessionCookie(w, r, sessionID, passkeySessionTTL)
+
+	body, _ := json.Marshal(assertion)
+	writeResponseBody(w, r, http.StatusOK, body)
+}
+
+// /auth/api/passkey/login/verify パスキー認証結果を検証してJWT Cookieを発行する
+func postAuthApiPasskeyLoginVerify(w http.ResponseWriter, r *http.Request) {
+	cookie, e := r.Cookie(passkeySessionCookieName)
+	if e != nil {
+		writeResponse(w, r, http.StatusBadRequest)
+		return
+	}
+	entry, ok := passkeySessions.take(cookie.Value, passkeySessionKindLogin)
+	clearPasskeySessionCookie(w, r)
+	if !ok {
+		writeResponse(w, r, http.StatusBadRequest)
+		return
+	}
+
+	wa, e := newWebAuthn(r)
+	if e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxPasskeyRequestBodyBytes)
+	var loggedInUser setting.UserType
+	credential, e := wa.FinishDiscoverableLogin(func(rawID, userHandle []byte) (webauthn.User, error) {
+		user, err := discoverableUser(rawID, userHandle)
+		if err != nil {
+			return nil, err
+		}
+		if pu, ok := user.(passkeyUser); ok {
+			loggedInUser = pu.user
+		}
+		return user, nil
+	}, entry.Session, r)
+	if e != nil {
+		writeResponse(w, r, http.StatusUnauthorized)
+		return
+	}
+	if loggedInUser.Id == "" {
+		writeResponse(w, r, http.StatusUnauthorized)
+		return
+	}
+	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
+	current := findPasskey(loggedInUser, credentialID)
+	passkey, e := credentialToPasskey(credential, current)
+	if e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+	if e := setting.UpdatePasskey(credentialID, passkey); e != nil {
+		writeResponse(w, r, http.StatusInternalServerError)
+		return
+	}
+
+	token, e := createToken(loggedInUser.Id, loggedInUser.TokenVersion)
+	if e != nil {
+		writeResponse(w, r, http.StatusUnauthorized)
+		return
+	}
+	t := time.Now().In(time.UTC).AddDate(0, 0, 7)
+	authCookie := &http.Cookie{Name: "_auth-proxy", Value: token, SameSite: http.SameSiteLaxMode, Path: "/", Expires: t, HttpOnly: true, Secure: true}
+	http.SetCookie(w, authCookie)
+	writeResponse(w, r, http.StatusOK)
+}
+
+func setPasskeySessionCookie(w http.ResponseWriter, r *http.Request, sessionID string, ttl time.Duration) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     passkeySessionCookieName,
+		Value:    sessionID,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/auth/api/passkey",
+		Expires:  time.Now().Add(ttl),
+		HttpOnly: true,
+		Secure:   !isLocalHost(hostWithoutPort(requestHost(r))),
+	})
+}
+
+func clearPasskeySessionCookie(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     passkeySessionCookieName,
+		MaxAge:   -1,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/auth/api/passkey",
+		HttpOnly: true,
+		Secure:   !isLocalHost(hostWithoutPort(requestHost(r))),
+	})
 }
 
 // ----------------------------------------------------------------------------

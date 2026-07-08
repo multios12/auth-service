@@ -19,11 +19,21 @@
       fetch("/auth/api/login", {
         method: "post",
         cache: "no-cache",
+        headers: {
+          "Accept": "application/json",
+          "X-Return-Next": "true",
+        },
         body: JSON.stringify(dat),
       })
         .then((r) => {
           if (r.status == 200) {
-            window.location.href = "/"
+            r.json()
+              .then((body) => {
+                window.location.href = body.next || "/"
+              })
+              .catch(() => {
+                window.location.href = "/"
+              })
             return
           }
 

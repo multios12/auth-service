@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -33,14 +34,75 @@ func TestMain(m *testing.M) {
 }
 
 func TestRouterInit(t *testing.T) {
-	routerInit()
+	origMux := http.DefaultServeMux
+	origMode := setting.Settings.Mode
+	t.Cleanup(func() {
+		http.DefaultServeMux = origMux
+		setting.Settings.Mode = origMode
+	})
+
+	tests := []struct {
+		mode             int
+		passwordWant     int
+		registerWant     int
+		passkeyLoginWant int
+	}{
+		{mode: 1, passwordWant: http.StatusOK, registerWant: http.StatusMethodNotAllowed, passkeyLoginWant: http.StatusMethodNotAllowed},
+		{mode: 2, passwordWant: http.StatusOK, registerWant: http.StatusUnauthorized, passkeyLoginWant: http.StatusMethodNotAllowed},
+		{mode: 3, passwordWant: http.StatusMethodNotAllowed, registerWant: http.StatusMethodNotAllowed, passkeyLoginWant: http.StatusOK},
+	}
+
+	for _, tt := range tests {
+		http.DefaultServeMux = http.NewServeMux()
+		setting.Settings.Mode = tt.mode
+		routerInit()
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/auth/api/login", strings.NewReader(`{"Id":"test","Password":"test"}`))
+		http.DefaultServeMux.ServeHTTP(w, r)
+		if w.Code != tt.passwordWant {
+			t.Fatalf("mode %d password login: got %d, want %d", tt.mode, w.Code, tt.passwordWant)
+		}
+
+		w = httptest.NewRecorder()
+		r = httptest.NewRequest(http.MethodPost, "/auth/api/passkey/register/options", nil)
+		http.DefaultServeMux.ServeHTTP(w, r)
+		if w.Code != tt.registerWant {
+			t.Fatalf("mode %d register: got %d, want %d", tt.mode, w.Code, tt.registerWant)
+		}
+
+		w = httptest.NewRecorder()
+		r = httptest.NewRequest(http.MethodPost, "/auth/api/passkey/login/options", nil)
+		http.DefaultServeMux.ServeHTTP(w, r)
+		if w.Code != tt.passkeyLoginWant {
+			t.Fatalf("mode %d passkey login: got %d, want %d", tt.mode, w.Code, tt.passkeyLoginWant)
+		}
+	}
 }
 func TestGetAuthHtml(t *testing.T) {
+	origMode := setting.Settings.Mode
+	t.Cleanup(func() { setting.Settings.Mode = origMode })
+
+	setting.Settings.Mode = 1
 	w, r := createRequestResponse(http.MethodGet, "/auth/login.html", ``)
 	r.SetPathValue("file", "login.html")
 	getAuthHtml(w, r)
 	if w.Code != http.StatusOK {
 		t.Error()
+	}
+	if !strings.Contains(w.Body.String(), "<div class=\"title\">login</div>") {
+		t.Error("login html not returned")
+	}
+
+	setting.Settings.Mode = 3
+	w, r = createRequestResponse(http.MethodGet, "/auth/login.html", ``)
+	r.SetPathValue("file", "login.html")
+	getAuthHtml(w, r)
+	if w.Code != http.StatusOK {
+		t.Error()
+	}
+	if !strings.Contains(w.Body.String(), "passkey login") {
+		t.Error("passkey login html not returned")
 	}
 
 	w, r = createRequestResponse(http.MethodGet, "/auth/notfound", ``)
@@ -116,6 +178,27 @@ func TestPostAuthLogin_ReturnToken(t *testing.T) {
 	cookies := w.Result().Cookies()
 	if len(cookies) != 1 || !cookies[0].Secure {
 		t.Error()
+	}
+}
+
+func TestPostAuthLogin_ReturnNext(t *testing.T) {
+	origMode := setting.Settings.Mode
+	t.Cleanup(func() { setting.Settings.Mode = origMode })
+	setting.Settings.Mode = 2
+
+	w, r := createRequestResponse(http.MethodPost, "/auth/api/login", `{"Id":"test","Password":"test"}`)
+	r.Header.Set("X-Return-Next", "true")
+	postAuthApiLogin(w, r)
+	if w.Code != http.StatusOK {
+		t.Error()
+	}
+
+	var body map[string]string
+	if e := json.Unmarshal(w.Body.Bytes(), &body); e != nil {
+		t.Fatal(e)
+	}
+	if body["next"] != "/auth/passkey-register.html" {
+		t.Fatalf("got %q", body["next"])
 	}
 }
 
@@ -245,6 +328,45 @@ func TestPostAuthApiInfoUnauthorized(t *testing.T) {
 	postAuthApiinfo(w, r)
 	if w.Code != http.StatusUnauthorized {
 		t.Error()
+	}
+}
+
+func TestPostAuthApiPasskeyRegisterOptions(t *testing.T) {
+	w, r := createRequestResponse(http.MethodPost, "/auth/api/passkey/register/options", ``)
+	createTokenCookie(r, false)
+	postAuthApiPasskeyRegisterOptions(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("got %d, want %d", w.Code, http.StatusOK)
+	}
+	if len(w.Result().Cookies()) == 0 {
+		t.Fatal("session cookie not set")
+	}
+
+	var body map[string]any
+	if e := json.Unmarshal(w.Body.Bytes(), &body); e != nil {
+		t.Fatal(e)
+	}
+	if _, ok := body["publicKey"]; !ok {
+		t.Fatal("publicKey notfound")
+	}
+}
+
+func TestPostAuthApiPasskeyLoginOptions(t *testing.T) {
+	w, r := createRequestResponse(http.MethodPost, "/auth/api/passkey/login/options", ``)
+	postAuthApiPasskeyLoginOptions(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("got %d, want %d", w.Code, http.StatusOK)
+	}
+	if len(w.Result().Cookies()) == 0 {
+		t.Fatal("session cookie not set")
+	}
+
+	var body map[string]any
+	if e := json.Unmarshal(w.Body.Bytes(), &body); e != nil {
+		t.Fatal(e)
+	}
+	if _, ok := body["publicKey"]; !ok {
+		t.Fatal("publicKey notfound")
 	}
 }
 
