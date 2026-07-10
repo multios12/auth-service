@@ -30,9 +30,9 @@ func Read(filename string) error {
 	return e
 }
 
-// 有効な認証モードを返す
-func Mode() int {
-	if Settings.Mode == 2 || Settings.Mode == 3 {
+// 有効な認証モードを返す(1:ID認証モード, 2:パスキー登録モード, 3:パスキー認証モード)
+func Mode() ModeEnum {
+	if Settings.Mode == PASSKEY_LOGIN || Settings.Mode == PASSKEY_REGIST {
 		return Settings.Mode
 	}
 	return 1

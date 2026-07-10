@@ -5,6 +5,14 @@ import "fmt"
 var settingsFile string   // 設定ファイルパス
 var Settings SettingsType // 設定
 
+type ModeEnum int // 認証モード
+
+const (
+	ID_LOGIN       ModeEnum = 1 // ID認証モード
+	PASSKEY_REGIST ModeEnum = 2 // パスキー登録モード
+	PASSKEY_LOGIN  ModeEnum = 3 // パスキー認証モード
+)
+
 // ユーザ情報
 type UserType struct {
 	Id           string        `json:"Id"`                   // ユーザID
@@ -28,7 +36,7 @@ type PasskeyType struct {
 
 // 設定情報
 type SettingsType struct {
-	Mode      int        `json:"mode,omitempty"` // 認証モード
+	Mode      ModeEnum   `json:"mode,omitempty"` // 認証モード(1:ID認証モード, 2:パスキー登録モード, 3:パスキー認証モード)
 	Secretkey string     `json:"Secretkey"`      // 秘密鍵
 	Users     []UserType `json:"Users"`          // ユーザ情報
 }

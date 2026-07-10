@@ -16,18 +16,18 @@ import (
 
 // ルーティング設定とサーバ立ち上げを行う
 func routerInit() {
-	if setting.Mode() != 3 {
+	if setting.Mode() != setting.PASSKEY_LOGIN { // パスキーログインモード時、ログインAPIは無効化
 		http.HandleFunc("POST /auth/api/login", postAuthApiLogin)
 	}
 	http.HandleFunc("GET  /auth/api/logout", getAuthApiLogout)
 	http.HandleFunc("GET  /auth/api/auth", authApiAuth)
 	http.HandleFunc("GET  /auth/api/info", getAuthApiInfo)
 	http.HandleFunc("POST /auth/api/info", postAuthApiinfo)
-	if setting.Mode() == 2 {
+	if setting.Mode() == setting.PASSKEY_REGIST { // パスキー登録モード時のみ、登録APIを有効化
 		http.HandleFunc("POST /auth/api/passkey/register/options", postAuthApiPasskeyRegisterOptions)
 		http.HandleFunc("POST /auth/api/passkey/register/verify", postAuthApiPasskeyRegisterVerify)
 	}
-	if setting.Mode() == 3 {
+	if setting.Mode() == setting.PASSKEY_LOGIN { // パスキーログインモード時のみ、ログインAPIを有効化
 		http.HandleFunc("POST /auth/api/passkey/login/options", postAuthApiPasskeyLoginOptions)
 		http.HandleFunc("POST /auth/api/passkey/login/verify", postAuthApiPasskeyLoginVerify)
 	}

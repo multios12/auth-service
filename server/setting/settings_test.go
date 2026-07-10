@@ -21,8 +21,8 @@ func TestRead(t *testing.T) {
 
 func TestMode(t *testing.T) {
 	tests := []struct {
-		mode int
-		want int
+		mode ModeEnum
+		want ModeEnum
 	}{
 		{mode: 0, want: 1},
 		{mode: 1, want: 1},

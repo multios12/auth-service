@@ -42,7 +42,7 @@ func TestRouterInit(t *testing.T) {
 	})
 
 	tests := []struct {
-		mode             int
+		mode             setting.ModeEnum
 		passwordWant     int
 		registerWant     int
 		passkeyLoginWant int
