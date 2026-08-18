@@ -1,18 +1,23 @@
-# DevContainers
 services:
   app:
-    build:
-      context: ../
-      dockerfile: ./.devcontainer/Dockerfile
-    tty: true
+    image: mcr.microsoft.com/devcontainers/rust:2-1-bookworm
+    init: true
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/auth-service:cached
+    working_dir: /workspaces/auth-service
+    expose:
+      - "3000"
     ports:
       - "3000:3000"
-    volumes:
-      - ../:/workspace
+
   nginx:
-    image: nginx:latest
+    image: nginx:1.28-alpine
+    depends_on:
+      - app
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ../nginx-test-root:/usr/share/nginx/html
+      - ../nginx-test-root:/usr/share/nginx/html:ro
+

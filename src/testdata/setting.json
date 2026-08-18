@@ -1,0 +1,14 @@
+{
+    "mode": 1,
+    "secretkey": "3fVe9HkIqUKjIYgjUKdW8qN5sX2cP7mL",
+    "users": [
+        {
+            "id": "test",
+            "password": "$argon2id$v=19$m=19456,t=2,p=1$RR4vVQUxyUNDthN/TiveKw$1m+mBRliJMHpvUu0wMe4slWwhW3LX1iZ0sO7G6C4IVA",
+            "permission": "",
+            "tokenVersion": 0,
+            "userHandle": "",
+            "passkeys": []
+        }
+    ]
+}

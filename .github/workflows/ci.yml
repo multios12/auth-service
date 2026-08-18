@@ -1,31 +1,82 @@
-name: ci
+name: CI
 
 on:
   push:
-    tags:
-      - '*'
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  check:
+    name: Format, lint, and test
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
 
-      - uses: actions/setup-go@v5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+
+      - name: Use stable Rust
+        run: rustup default stable
+
+      - name: Cache Cargo files
+        uses: actions/cache@v4
         with:
-          go-version: "1.26.x"
-        # release
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload assets
-        uses: actions/upload-artifact@v4
-        with:
-          name: auth-service
-          path: dist/*
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            generate_password_hash/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Check formatting
+        run: |
+          cargo fmt --all -- --check
+          cargo fmt --manifest-path generate_password_hash/Cargo.toml --all -- --check
+
+      - name: Run Clippy
+        run: |
+          cargo clippy --all-targets --all-features --locked -- -D warnings
+          cargo clippy --manifest-path generate_password_hash/Cargo.toml --all-targets --all-features --locked -- -D warnings
+
+      - name: Run tests
+        run: |
+          cargo test --all-features --locked
+          cargo test --manifest-path generate_password_hash/Cargo.toml --all-features --locked
+
+      - name: Build static musl release binaries
+        run: |
+          docker build \
+            --file Dockerfile.musl \
+            --target artifact \
+            --output type=local,dest=dist \
+            .
+
+      - name: Verify musl binaries are statically linked
+        run: |
+          file dist/auth-service dist/generate_password_hash
+          if readelf -d dist/auth-service | grep -q '(NEEDED)'; then
+            echo "auth-service has shared-library dependencies" >&2
+            readelf -d dist/auth-service >&2
+            exit 1
+          fi
+          if readelf -d dist/generate_password_hash | grep -q '(NEEDED)'; then
+            echo "generate_password_hash has shared-library dependencies" >&2
+            readelf -d dist/generate_password_hash >&2
+            exit 1
+          fi
