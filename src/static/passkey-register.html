@@ -63,7 +63,7 @@
     async function clickRegister() {
       document.querySelector(".notification")?.classList.add("is-hidden")
       try {
-        const optionsResponse = await fetch("/auth/api/passkey/register/options", {
+        const optionsResponse = await fetch("/auth/api/register/options", {
           method: "post",
           cache: "no-cache",
         })
@@ -78,9 +78,13 @@
 
         const options = creationOptionsFromJSON(await optionsResponse.json())
         const credential = await navigator.credentials.create(options)
-        const verifyResponse = await fetch("/auth/api/passkey/register/verify", {
+        const verifyResponse = await fetch("/auth/api/register/verify", {
           method: "post",
           cache: "no-cache",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify(credentialToJSON(credential)),
         })
         if (verifyResponse.ok) {

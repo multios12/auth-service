@@ -13,14 +13,15 @@
     function clickSubmit() {
       document.querySelector(".notification")?.classList.add("is-hidden")
       let dat = {}
-      dat.Id = document.querySelector('input[name="id"]').value
-      dat.Password = document.querySelector('input[name="password"]').value
+      dat.id = document.querySelector('input[name="id"]').value
+      dat.password = document.querySelector('input[name="password"]').value
 
       fetch("/auth/api/login", {
         method: "post",
         cache: "no-cache",
         headers: {
           "Accept": "application/json",
+          "Content-Type": "application/json",
           "X-Return-Next": "true",
         },
         body: JSON.stringify(dat),

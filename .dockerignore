@@ -1,0 +1,7 @@
+.git
+.github
+.devcontainer
+target
+generate_password_hash/target
+dist
+setting.json

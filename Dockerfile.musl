@@ -1,0 +1,22 @@
+FROM rust:1.97.1-alpine3.22 AS builder
+
+RUN apk add --no-cache build-base openssl-dev openssl-libs-static pkgconf
+
+ENV OPENSSL_STATIC=1
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+COPY generate_password_hash/Cargo.toml generate_password_hash/Cargo.lock ./generate_password_hash/
+COPY generate_password_hash/src ./generate_password_hash/src
+
+RUN cargo build --locked --release --target x86_64-unknown-linux-musl \
+    && cargo build --locked --release \
+        --target x86_64-unknown-linux-musl \
+        --manifest-path generate_password_hash/Cargo.toml
+
+FROM scratch AS artifact
+
+COPY --from=builder /build/target/x86_64-unknown-linux-musl/release/auth-service /auth-service
+COPY --from=builder /build/generate_password_hash/target/x86_64-unknown-linux-musl/release/generate_password_hash /generate_password_hash

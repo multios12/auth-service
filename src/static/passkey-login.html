@@ -67,7 +67,7 @@
     async function startLogin() {
       document.querySelector(".notification")?.classList.add("is-hidden")
       try {
-        const optionsResponse = await fetch("/auth/api/passkey/login/options", {
+        const optionsResponse = await fetch("/auth/api/login/options", {
           method: "post",
           cache: "no-cache",
         })
@@ -78,9 +78,13 @@
 
         const options = requestOptionsFromJSON(await optionsResponse.json())
         const assertion = await navigator.credentials.get(options)
-        const verifyResponse = await fetch("/auth/api/passkey/login/verify", {
+        const verifyResponse = await fetch("/auth/api/login/verify", {
           method: "post",
           cache: "no-cache",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify(assertionToJSON(assertion)),
         })
         if (verifyResponse.ok) {

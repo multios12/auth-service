@@ -1,25 +1,33 @@
 {
   "name": "auth-service",
   "dockerComposeFile": "docker-compose.yml",
-  "workspaceFolder": "/workspace",
   "service": "app",
-  "shutdownAction": "none",
+  "workspaceFolder": "/workspaces/auth-service",
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [
+    3000,
+    "nginx:80"
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "auth-service (direct)"
+    },
+    "8080": {
+      "label": "nginx reverse proxy"
+    }
+  },
   "customizations": {
     "vscode": {
       "extensions": [
-        "golang.go",
-        "dbaeumer.vscode-eslint"
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb"
       ],
       "settings": {
-        "editor.codeActionsOnSave": {
-          "source.fixAll.eslint": "always"
-        },
-        "eslint.format.enable": true,
-        "eslint.run": "onSave",
-        "eslint.problems.shortenToSingleLine": true,
         "editor.formatOnSave": true,
-        "editor.formatOnPaste": true
+        "rust-analyzer.check.command": "clippy"
       }
     }
-  }
+  },
+  "postCreateCommand": "rustup update stable && rustup default stable && rustup component add rustfmt clippy",
+  "remoteUser": "vscode"
 }
